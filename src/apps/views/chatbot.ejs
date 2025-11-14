@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Chatbot Hana</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+      #chatbox {
+        width: 400px;
+        margin: 20px auto;
+        border: 1px solid #ccc;
+        padding: 10px;
+      }
+      .message {
+        margin: 5px 0;
+      }
+      .user {
+        color: blue;
+      }
+      .bot {
+        color: green;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="chatbox">
+      <div id="messages"></div>
+      <input type="text" id="inputMessage" placeholder="Nhập tin nhắn..." />
+      <button id="sendBtn">Gửi</button>
+    </div>
+
+    <script>
+      const messagesDiv = document.getElementById("messages");
+      const input = document.getElementById("inputMessage");
+      const btn = document.getElementById("sendBtn");
+
+      const history = [];
+
+      btn.onclick = async () => {
+        const message = input.value.trim();
+        if (!message) return;
+        messagesDiv.innerHTML += `<div class="message user">Bạn: ${message}</div>`;
+        input.value = "";
+
+        try {
+          const res = await axios.post("/api/chatbot/ask", {
+            message,
+            history,
+          });
+          const reply = res.data.reply;
+          messagesDiv.innerHTML += `<div class="message bot">Bot: ${reply}</div>`;
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+          // Lưu lịch sử chat
+          history.push({ role: "user", content: message });
+          history.push({ role: "assistant", content: reply });
+        } catch (err) {
+          messagesDiv.innerHTML += `<div class="message bot">Bot: Lỗi, thử lại sau</div>`;
+        }
+      };
+
+      input.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") btn.click();
+      });
+    </script>
+  </body>
+</html>

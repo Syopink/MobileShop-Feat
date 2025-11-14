@@ -1,0 +1,428 @@
+<%- include("../layout/head.ejs", { title: "Order Detail" }) %> <%-
+include("../layout/header.ejs") %> <%- include("../layout/sidebar.ejs") %>
+
+<style>
+  .order-info-card {
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+  }
+  .status-timeline {
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-bottom: 20px;
+  }
+  .payment-info {
+    border-left: 4px solid #5cb85c;
+    padding-left: 15px;
+  }
+  .payment-info.unpaid {
+    border-left-color: #d9534f;
+  }
+</style>
+
+<div class="col-sm-9 col-sm-offset-3 col-lg-10 col-lg-offset-2 main">
+  <div class="row">
+    <ol class="breadcrumb">
+      <li>
+        <a href="/admin/dashboard">
+          <svg class="glyph stroked home">
+            <use xlink:href="#stroked-home"></use>
+          </svg>
+        </a>
+      </li>
+      <li><a href="/admin/orders">Quản lý đơn hàng</a></li>
+      <li class="active">Chi tiết đơn hàng</li>
+    </ol>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-12">
+      <h1 class="page-header">
+        Chi tiết đơn hàng #<%= order._id.toString().slice(-6) %>
+        <span class="label label-<%= order.statusInfo.color %> pull-right">
+          <%= order.statusInfo.text %>
+        </span>
+      </h1>
+    </div>
+  </div>
+
+  <!-- Thông tin đơn hàng -->
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h4 class="panel-title">
+            <i class="glyphicon glyphicon-info-sign"></i> Thông tin đơn hàng
+          </h4>
+        </div>
+        <div class="panel-body">
+          <div class="row">
+            <!-- Cột trái -->
+            <div class="col-md-6">
+              <div class="order-info-card">
+                <h5><strong>Thông tin khách hàng</strong></h5>
+                <p>
+                  <i class="glyphicon glyphicon-user"></i>
+                  <strong>Tên:</strong> <%= order.name %>
+                </p>
+                <p>
+                  <i class="glyphicon glyphicon-phone"></i>
+                  <strong>SĐT:</strong> <%= order.phone %>
+                </p>
+                <p>
+                  <i class="glyphicon glyphicon-envelope"></i>
+                  <strong>Email:</strong> <%= order.email || 'Không có' %>
+                </p>
+              </div>
+
+              <div class="order-info-card">
+                <h5><strong>Địa chỉ giao hàng</strong></h5>
+                <p>
+                  <i class="glyphicon glyphicon-map-marker"></i>
+                  <%= order.address || 'Chưa cập nhật' %>
+                </p>
+              </div>
+
+              <!-- ✅ Thông tin thanh toán -->
+              <div
+                class="order-info-card payment-info <%= order.payment_status === 'paid' ? '' : 'unpaid' %>"
+              >
+                <h5><strong>Thông tin thanh toán</strong></h5>
+
+                <p>
+                  <i class="glyphicon glyphicon-credit-card"></i>
+                  <strong>Phương thức:</strong>
+                  <% if (order.payment_method === 'vnpay') { %>
+                  <span class="label label-primary">
+                    <i class="glyphicon glyphicon-credit-card"></i> VNPay
+                  </span>
+                  <% } else { %>
+                  <span class="label label-warning">
+                    <i class="glyphicon glyphicon-piggy-bank"></i> COD
+                  </span>
+                  <% } %>
+                </p>
+
+                <p>
+                  <i
+                    class="glyphicon glyphicon-<%= order.payment_status === 'paid' ? 'ok-circle' : 'time' %>"
+                  ></i>
+                  <strong>Trạng thái TT:</strong>
+                  <% if (order.payment_status === 'paid') { %>
+                  <span class="label label-success">Đã thanh toán</span>
+                  <% } else { %>
+                  <span class="label label-default">Chưa thanh toán</span>
+                  <% } %>
+                </p>
+
+                <!-- Thông tin giao dịch VNPay -->
+                <% if (order.payment_method === 'vnpay') { %> <% if
+                (order.vnpay_txn_ref) { %>
+                <p>
+                  <strong>Mã GD:</strong>
+                  <code><%= order.vnpay_txn_ref %></code>
+                </p>
+                <% } %> <% if (order.vnpay_transaction_no) { %>
+                <p>
+                  <strong>Mã giao dịch:</strong>
+                  <code><%= order.vnpay_transaction_no %></code>
+                </p>
+                <% } %> <% if (order.vnpay_paid_at) { %>
+                <p>
+                  <strong>Thanh toán lúc:</strong>
+                  <%= moment(order.vnpay_paid_at).format("DD/MM/YYYY HH:mm") %>
+                </p>
+                <% } %> <% } %>
+
+                <!-- ✅ Nút đánh dấu đã thanh toán cho COD -->
+                <% if (order.payment_method === 'cod' && order.payment_status
+                === 'unpaid' && order.status !== 0) { %>
+                <button
+                  type="button"
+                  class="btn btn-success btn-sm btn-block"
+                  style="margin-top: 10px"
+                  onclick="markAsPaid('<%= order._id %>')"
+                >
+                  <i class="glyphicon glyphicon-check"></i> Đánh dấu đã thanh
+                  toán
+                </button>
+                <% } %>
+              </div>
+            </div>
+
+            <!-- Cột phải -->
+            <div class="col-md-6">
+              <div class="order-info-card">
+                <h5><strong>Thông tin vận chuyển</strong></h5>
+                <% if(order.ghn_order_code) { %>
+                <p>
+                  <strong>Mã vận đơn GHN:</strong>
+                  <code><%= order.ghn_order_code %></code>
+                </p>
+                <% if(order.ghn_status_name) { %>
+                <p>
+                  <strong>Trạng thái GHN:</strong>
+                  <span class="text-info"><%= order.ghn_status_name %></span>
+                </p>
+                <% } %> <% if(order.ghn_expected_delivery) { %>
+                <p>
+                  <strong>Dự kiến giao:</strong>
+                  <%=
+                  moment(order.ghn_expected_delivery).format("DD/MM/YYYYHH:mm")
+                  %>
+                </p>
+                <% } %> <% } else { %>
+                <p class="text-muted">Chưa tạo vận đơn GHN</p>
+                <% } %>
+              </div>
+
+              <div class="order-info-card">
+                <h5><strong>Thời gian</strong></h5>
+                <p>
+                  <i class="glyphicon glyphicon-time"></i>
+                  <strong>Đặt hàng:</strong>
+                  <%= moment(order.createdAt).format("DD/MM/YYYY HH:mm") %>
+                </p>
+                <% if(order.updatedAt) { %>
+                <p>
+                  <i class="glyphicon glyphicon-refresh"></i>
+                  <strong>Cập nhật:</strong>
+                  <%= moment(order.updatedAt).format("DD/MM/YYYY HH:mm") %>
+                </p>
+                <% } %>
+              </div>
+
+              <!-- Thông tin tổng tiền -->
+              <div class="order-info-card" style="background: #e8f5e9">
+                <h5><strong>Tổng tiền</strong></h5>
+                <p>
+                  <strong>Tổng tiền hàng:</strong>
+                  <span class="pull-right"
+                    ><%= vndPrice(order.total_amount) %></span
+                  >
+                </p>
+                <% if(order.shippingFee) { %>
+                <p>
+                  <strong>Phí vận chuyển:</strong>
+                  <span class="pull-right"
+                    ><%= vndPrice(order.shippingFee) %></span
+                  >
+                </p>
+                <% } %>
+                <hr style="margin: 10px 0" />
+                <p style="font-size: 16px">
+                  <strong>Tổng thanh toán:</strong>
+                  <span class="pull-right text-danger">
+                    <strong
+                      ><%= vndPrice(order.total_amount + (order.shippingFee ||
+                      0)) %></strong
+                    >
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Danh sách sản phẩm -->
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h4 class="panel-title">
+            <i class="glyphicon glyphicon-shopping-cart"></i> Danh sách sản phẩm
+          </h4>
+        </div>
+        <div class="panel-body">
+          <div class="table-responsive">
+            <table class="table table-bordered table-hover text-center">
+              <thead class="table-light" style="background-color: #f5f5f5">
+                <tr>
+                  <th class="text-center" style="width: 100px">Hình ảnh</th>
+                  <th class="text-center">Tên sản phẩm</th>
+                  <th class="text-center" style="width: 120px">Giá</th>
+                  <th class="text-center" style="width: 100px">Số lượng</th>
+                  <th class="text-center" style="width: 150px">Thành tiền</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (order.items && order.items.length > 0) { %> <%
+                order.items.forEach(item => { %>
+                <tr>
+                  <td>
+                    <img
+                      src="../uploads/images/<%= item.thumbnail %>"
+                      class="img-responsive center-block"
+                      style="max-height: 80px; max-width: 80px; margin: auto"
+                      alt="<%= item.name %>"
+                      onerror="this.src='../uploads/images/no-img.jpg'"
+                    />
+                  </td>
+                  <td class="text-left"><%= item.name %></td>
+                  <td class="text-right"><%= vndPrice(item.price) %></td>
+                  <td><%= item.quantity %></td>
+                  <td class="text-right">
+                    <strong><%= vndPrice(item.price * item.quantity) %></strong>
+                  </td>
+                </tr>
+                <% }) %>
+
+                <!-- Tổng cộng -->
+                <tr style="background-color: #f9f9f9">
+                  <td colspan="4" class="text-right">
+                    <strong>Tổng tiền hàng:</strong>
+                  </td>
+                  <td class="text-right">
+                    <strong><%= vndPrice(order.total_amount) %></strong>
+                  </td>
+                </tr>
+                <% if(order.shippingFee) { %>
+                <tr>
+                  <td colspan="4" class="text-right">
+                    <strong>Phí vận chuyển:</strong>
+                  </td>
+                  <td class="text-right">
+                    <strong><%= vndPrice(order.shippingFee) %></strong>
+                  </td>
+                </tr>
+                <tr style="background-color: #e8f5e9">
+                  <td colspan="4" class="text-right">
+                    <strong style="font-size: 16px">Tổng thanh toán:</strong>
+                  </td>
+                  <td class="text-right">
+                    <strong style="font-size: 16px; color: #4caf50">
+                      <%= vndPrice(order.total_amount + order.shippingFee) %>
+                    </strong>
+                  </td>
+                </tr>
+                <% } %> <% } else { %>
+                <tr>
+                  <td colspan="5">Không có sản phẩm nào trong đơn này.</td>
+                </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nút hành động -->
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="panel panel-default">
+        <div class="panel-body">
+          <div class="text-right">
+            <a href="/admin/orders" class="btn btn-default btn-sm">
+              <i class="glyphicon glyphicon-arrow-left"></i> Quay lại danh sách
+            </a>
+
+            <!-- ✅ Chỉ cho phép hủy nếu chưa thanh toán hoặc COD -->
+            <% if(order.canCancel) { %>
+            <form
+              action="/admin/order/<%= order._id %>/cancel"
+              method="POST"
+              style="display: inline"
+              onsubmit="return confirm('Bạn có chắc chắn muốn hủy đơn hàng này? Hành động này sẽ gửi yêu cầu hủy đến GHN.')"
+            >
+              <button type="submit" class="btn btn-danger btn-sm">
+                <i class="glyphicon glyphicon-remove"></i> Hủy đơn hàng
+              </button>
+            </form>
+            <% } else if(order.payment_status === 'paid' && order.payment_method
+            === 'vnpay') { %>
+            <button
+              type="button"
+              class="btn btn-default btn-sm"
+              disabled
+              title="Không thể hủy đơn đã thanh toán VNPay"
+            >
+              <i class="glyphicon glyphicon-lock"></i> Đã thanh toán VNPay
+            </button>
+            <% } else { %>
+            <button type="button" class="btn btn-default btn-sm" disabled>
+              <i class="glyphicon glyphicon-lock"></i> Không thể hủy
+            </button>
+            <% } %> <% if(order.ghn_order_code) { %>
+            <a
+              href="https://tracking.ghn.dev/?order_code=<%= order.ghn_order_code %>"
+              target="_blank"
+              class="btn btn-info btn-sm"
+            >
+              <i class="glyphicon glyphicon-new-window"></i> Xem trên GHN
+            </a>
+            <% } %>
+          </div>
+
+          <!-- Ghi chú trạng thái -->
+          <div
+            class="alert alert-info"
+            style="margin-top: 20px; margin-bottom: 0"
+          >
+            <strong
+              ><i class="glyphicon glyphicon-info-sign"></i> Lưu ý:</strong
+            >
+            <ul style="margin-bottom: 0; margin-top: 10px">
+              <li>
+                <strong>COD chưa thanh toán:</strong> Có thể hủy đơn và đánh dấu
+                đã thanh toán
+              </li>
+              <li>
+                <strong>VNPay đã thanh toán:</strong> Không thể hủy, cần liên hệ
+                khách hàng để hoàn tiền
+              </li>
+              <li><strong>Chờ lấy hàng:</strong> Có thể hủy đơn trên GHN</li>
+              <li>
+                <strong>Đang lấy/giao hàng:</strong> Không thể hủy, liên hệ GHN
+                hotline nếu cần
+              </li>
+              <li><strong>Đã giao/Đã hủy:</strong> Đơn hàng đã hoàn tất</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JS -->
+<script src="/js/jquery-1.11.1.min.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+
+<script>
+  // ✅ Function đánh dấu đã thanh toán
+  function markAsPaid(orderId) {
+    if (!confirm("Xác nhận khách hàng đã thanh toán COD?")) return;
+
+    fetch(`/admin/order/${orderId}/update-payment`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ payment_status: "paid" }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          alert("✅ Đã cập nhật trạng thái thanh toán");
+          location.reload();
+        } else {
+          alert("❌ Lỗi: " + data.message);
+        }
+      })
+      .catch((err) => {
+        alert("❌ Lỗi kết nối server");
+        console.error(err);
+      });
+  }
+</script>
+
+<%- include("../layout/footer.ejs") %>

@@ -1,0 +1,252 @@
+<!-- chatbotWidget.ejs -->
+<style>
+  /* Chatbot Icon Mini */
+  #chatbot-mini {
+    position: fixed;
+    bottom: 20px;
+    left: 25px; /* ✅ đổi từ right: 25px sang left: 25px */
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4facfe, #00f2fe);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    z-index: 9000 !important;
+  }
+
+  /* Container chat full — giữ nguyên nhưng chắc chắn nó cũng nằm bên trái */
+  #chatbot-container {
+    position: fixed;
+    bottom: 20px;
+    left: 20px; /* ✅ đảm bảo góc trái */
+    width: 360px;
+    max-height: 500px;
+    display: flex;
+    flex-direction: column;
+    font-family: "Segoe UI", Arial, sans-serif;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+    transform: scale(0);
+    transform-origin: bottom left; /* ✅ đổi hướng mở ra bên trái */
+    transition: transform 0.3s ease;
+    z-index: 9000 !important; /* thấp hơn chat thật để không đè */
+  }
+
+  #chatbot-container[style*="scale(0)"] {
+    pointer-events: none; /* không nhận click khi ẩn */
+  }
+
+  #chatbot-header {
+    background: linear-gradient(135deg, #4facfe, #00f2fe);
+    color: #fff;
+    padding: 14px 16px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  #chatbot-header span {
+    font-size: 18px;
+  }
+
+  #chatbot-header button {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+  }
+
+  #chatbot-body {
+    flex: 1;
+    background: #f0f2f5;
+    padding: 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .message {
+    display: flex;
+    margin: 6px 0;
+    max-width: 80%;
+    word-wrap: break-word;
+    font-size: 14px;
+  }
+
+  .message.user {
+    align-self: flex-end;
+    justify-content: flex-end;
+  }
+
+  .message.bot {
+    align-self: flex-start;
+  }
+
+  .message .bubble {
+    padding: 10px 14px;
+    border-radius: 20px;
+    position: relative;
+  }
+
+  .message.user .bubble {
+    background: #4facfe;
+    color: #fff;
+    border-bottom-right-radius: 0;
+  }
+
+  .message.bot .bubble {
+    background: #fff;
+    color: #333;
+    border-bottom-left-radius: 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    margin: 0 6px;
+  }
+
+  #chatbot-input {
+    display: flex;
+    padding: 8px;
+    border-top: 1px solid #ddd;
+    background: #fff;
+  }
+
+  #chatbot-input input {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 20px;
+    border: 1px solid #ccc;
+    outline: none;
+    font-size: 14px;
+  }
+
+  #chatbot-input button {
+    margin-left: 8px;
+    padding: 10px 16px;
+    background: #4facfe;
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  .typing {
+    font-style: italic;
+    color: #888;
+    font-size: 13px;
+    margin-left: 40px;
+  }
+</style>
+
+<!-- Mini icon -->
+<div id="chatbot-mini">🤖</div>
+
+<!-- Chat container -->
+<div id="chatbot-container">
+  <div id="chatbot-header">
+    <span>Hana Bot</span>
+    <button id="chatbot-close">&times;</button>
+  </div>
+  <div id="chatbot-body"></div>
+  <div id="chatbot-input">
+    <input type="text" id="chatbot-message" placeholder="Nhập câu hỏi..." />
+    <button id="chatbot-send">Gửi</button>
+  </div>
+</div>
+
+<script>
+  const mini = document.getElementById("chatbot-mini");
+  const container = document.getElementById("chatbot-container");
+  const closeBtn = document.getElementById("chatbot-close");
+  const body = document.getElementById("chatbot-body");
+  const input = document.getElementById("chatbot-message");
+  const sendBtn = document.getElementById("chatbot-send");
+
+  let firstOpen = true;
+
+  mini.addEventListener("click", () => {
+    container.style.transform = "scale(1)";
+    mini.style.display = "none";
+
+    if (firstOpen) {
+      appendMessage(
+        "bot",
+        "Xin chào! Mình là Hana, bạn cần tư vấn gì hôm nay?"
+      );
+      firstOpen = false;
+    }
+  });
+
+  closeBtn.addEventListener("click", () => {
+    container.style.transform = "scale(0)";
+    mini.style.display = "flex";
+  });
+
+  async function sendMessage(message) {
+    if (!message) return;
+    appendMessage("user", message);
+    input.value = "";
+
+    // Typing indicator
+    const typingElem = appendMessage("bot", "...", true);
+
+    try {
+      const res = await fetch("/api/chatbot/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
+      });
+      const data = await res.json();
+      typingElem.querySelector(".bubble").innerText = data.reply;
+    } catch (err) {
+      typingElem.querySelector(".bubble").innerText =
+        "Xin lỗi, hệ thống đang bận.";
+      console.error(err);
+    }
+  }
+
+  function appendMessage(sender, text, typing = false) {
+    const msg = document.createElement("div");
+    msg.classList.add("message", sender);
+    const avatar = document.createElement("img");
+    avatar.className = "avatar";
+    avatar.src =
+      sender === "bot"
+        ? "/static/configs/images/giahuy (2).png"
+        : "/static/images/user.png";
+
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    bubble.innerText = text;
+
+    if (sender === "bot") msg.appendChild(avatar);
+    msg.appendChild(bubble);
+    if (sender === "user") msg.appendChild(avatar);
+
+    body.appendChild(msg);
+    body.scrollTop = body.scrollHeight;
+
+    if (typing) msg.classList.add("typing");
+
+    return msg;
+  }
+
+  sendBtn.addEventListener("click", () => sendMessage(input.value));
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") sendMessage(input.value);
+  });
+</script>

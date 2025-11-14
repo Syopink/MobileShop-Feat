@@ -1,0 +1,162 @@
+<%- include("layouts/head.ejs", { title: "Quản lý đơn hàng" }) %> <%-
+include("layouts/header.ejs") %> <%- include("layouts/menu.ejs") %> <%-
+include("layouts/slider.ejs") %>
+
+<style>
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+  .table th,
+  .table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+  }
+  .table th {
+    background-color: #f2f2f2;
+  }
+  .orderTd {
+    text-align: center;
+  }
+  .login-reminder {
+    background: white;
+    margin-top: 5px;
+    padding: 10px;
+    border-radius: 3px;
+    text-align: center;
+  }
+  .status-label {
+    font-weight: bold;
+    margin-left: 10px;
+  }
+</style>
+
+<% if (email) { %>
+<div id="my-cart">
+  <table class="table">
+    <thead>
+      <tr>
+        <th class="orderTh">STT</th>
+        <th class="orderTh">Tên sản phẩm</th>
+        <th class="orderTh">Ảnh sản phẩm</th>
+        <th class="orderTh">Số lượng</th>
+        <th class="orderTh">Giá</th>
+        <th class="orderTh">Thành tiền</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% for (let order of orders) { let totalAmount
+      = 0; for (let item of order.items) { totalAmount += item.prd_price *
+      item.prd_qty; } order.total_amount = totalAmount; } let index = 1; let
+      count = 1; let countProduct = 1; %> <% for (let order of orders) { %>
+      <!-- Hàng tiêu đề đơn hàng -->
+      <tr style="background-color: #f9f9f9">
+        <td><b><%= index++ %></b></td>
+        <td colspan="5">
+          <b>Đơn hàng thứ <%= count++ %></b> —
+          <span style="color: red">Mã: <%= order.ghn_order_code %></span> —
+          <b>Tổng tiền: <%= vndPrice(order.total_amount) %></b>
+
+         <% if (order.status === 0 || order.status_text === 'cancel') { %>
+  <span class="status-label" style="color: gray">Đã hủy</span>
+<% } else if (['ready_to_pick', 'picking', 'delivering'].includes(order.status_text)) { %>
+  <span class="status-label" style="color: green">
+    <% if (order.status_text === 'ready_to_pick') { %>Chờ lấy hàng<% } %>
+    <% if (order.status_text === 'picking') { %>Đang lấy hàng<% } %>
+    <% if (order.status_text === 'delivering') { %>Đang giao hàng<% } %>
+  </span>
+
+  <% if (order.status_text === 'ready_to_pick') { %>
+  <form
+    action="/order/<%= order._id %>/cancel"
+    method="POST"
+    onsubmit="return confirm('Bạn có chắc muốn hủy đơn hàng này không?');"
+    style="display: inline; margin-left: 10px"
+  >
+    <button type="submit" class="btn btn-danger btn-sm">
+      Hủy đơn hàng
+    </button>
+  </form>
+  <% } %>
+
+<% } else if (order.status_text === 'delivered') { %>
+  <span class="status-label" style="color: blue">Đã giao thành công</span>
+<% } else { %>
+  <span class="status-label" style="color: orange">Đang xử lý</span>
+  <form
+    action="/order/<%= order._id %>/cancel"
+    method="POST"
+    onsubmit="return confirm('Bạn có chắc muốn hủy đơn hàng này không?');"
+    style="display: inline; margin-left: 10px"
+  >
+    <button type="submit" class="btn btn-danger btn-sm">
+      Hủy đơn hàng
+    </button>
+  </form>
+<% } %>
+
+        </td>
+      </tr>
+
+      <!-- Các sản phẩm trong đơn -->
+      <% for (let item of order.items) { %>
+      <tr>
+        <td></td>
+        <td><%= countProduct++ %>. <%= item.prd_name %></td>
+        <td class="orderTd">
+          <img
+            src="../uploads/images/<%= item.prd_thumbnail %>"
+            height="80px"
+            width="80px"
+            alt=""
+          />
+        </td>
+        <td class="orderTd"><%= item.prd_qty %></td>
+        <td class="orderTd"><%= vndPrice(item.prd_price) %></td>
+        <td class="orderTd"><%= vndPrice(item.prd_price * item.prd_qty) %></td>
+      </tr>
+      <% } %> <% } %>
+    </tbody>
+  </table>
+</div>
+<% } else { %>
+<div class="login-reminder">
+  <p>Vui lòng đăng nhập để xem lịch sử đơn hàng</p>
+  <a href="/login" class="btn btn-primary">Đăng nhập</a>
+</div>
+<% } %>
+
+<div class="panel-footer">
+  <nav aria-label="Page navigation example">
+    <ul class="pagination" style="margin-top: 100px; margin-left: 550px">
+      <% if (page > 1) { %>
+      <li class="page-item">
+        <a class="page-link" href="/historyOrder/?page=<%= page-1 %>"
+          >&laquo;</a
+        >
+      </li>
+      <% } %> <% for (let item of pages) { %>
+      <li class="page-item <%= item === page ? 'active' : '' %>">
+        <% if (item === '...') { %>
+        <span class="page-link"><%= item %></span>
+        <% } else { %>
+        <a class="page-link" href="/historyOrder/?page=<%= item %>"
+          ><%= item %></a
+        >
+        <% } %>
+      </li>
+      <% } %> <% if (page < totalPages) { %>
+      <li class="page-item">
+        <a class="page-link" href="/historyOrder/?page=<%= page+1 %>"
+          >&raquo;</a
+        >
+      </li>
+      <% } %>
+    </ul>
+  </nav>
+</div>
+</div>
+
+<%- include("layouts/sidebar.ejs") %> <%- include("layouts/footer.ejs") %>

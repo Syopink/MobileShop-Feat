@@ -1,0 +1,111 @@
+<%- include("../layout/head.ejs", {title: "Comment Manager"})%>
+<%- include("../layout/header.ejs")%>
+<%- include("../layout/sidebar.ejs")%>
+
+<div class="col-sm-9 col-sm-offset-3 col-lg-10 col-lg-offset-2 main">			
+    <div class="row">
+        <ol class="breadcrumb">
+            <li><a href="#"><svg class="glyph stroked home"><use xlink:href="#stroked-home"></use></svg></a></li>
+            <li class="active">Quản lý comment</li>
+        </ol>
+    </div><!--/.row-->
+    
+    <div class="row">
+        <div class="col-lg-12">
+            <h1 class="page-header">Quản lý comment</h1>
+        </div>
+    </div><!--/.row-->
+    
+    <div id="toolbar" class="btn-group">
+        <a href="/admin/comments/create" class="btn btn-success">
+            <i class="glyphicon glyphicon-plus"></i> Thêm comment
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <table 
+                        data-toolbar="#toolbar"
+                        data-toggle="table">
+                        <thead>
+                            <tr>
+                                <th data-field="id" data-sortable="true">ID</th>
+                                <th>Email</th>
+                                <th>Người bình luận</th>
+                                <th>Sản phẩm</th>
+                                <th>Nội dung</th>
+								<th>Ngày tạo</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% let idCounter = 1;%>
+                            <% for(let comment of comments){ %>
+                            <tr>
+                                <td style=""><%= idCounter++ %></td>
+                                <td style=""><%= comment.email %></td>
+                                <td style=""><%= comment.full_name %></td>
+                                <td style=""><%= comment.prd_id.name %></td>
+                                <td style=""><%= comment.body %></td>
+                                <td style=""><%= timesAgo(comment.createdAt) %></td>
+                                <td class="form-group">
+                                    <a href="/admin/comments/edit/<%= comment._id %>" class="btn btn-primary">
+                                        <i class="glyphicon glyphicon-pencil"> Sửa</i>
+                                    </a>
+                                    <a href="/admin/comments/admit/<%= comment._id %>" class="btn <%= !comment.is_allowed ? 'btn-danger' : 'btn-success' %>">
+										<% if(!comment.is_allowed) {%>
+                                        <i class="glyphicon glyphicon-plus"> Duyệt</i>
+										<%} else {%>
+											<i class="glyphicon glyphicon-minus"> Không duyệt</i>
+										<%}%>
+                                    </a>
+                                    <a href="/admin/comments/delete/<%= comment._id %>" class="btn btn-danger">
+                                        <i class="glyphicon glyphicon-remove"> Xóa</i>
+                                    </a>
+                                </td>
+                            </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="panel-footer">
+                    <nav aria-label="Page navigation example">
+                        <ul class="pagination">
+                            <%if(page> 1){%>
+                                <li class="page-item"><a class="page-link"
+                                        href="/admin/comments/?page=<%=page-1%>">&laquo;</a></li>
+                                <%}%>
+                                    <%for(let item of pages){%>
+                                        <li class="page-item <%= item === page? 'active' : '' %>">
+                                            <%if(item==="..." ){%>
+                                                <span class="page-link">
+                                                    <%=item%>
+                                                </span>
+                                                <%}else{%>
+                                                    <a class="page-link"
+                                                        href="/admin/comments/?page=<%= item%>">
+                                                        <%=item%>
+                                                    </a>
+                                                    <%}%>
+                                        </li>
+                                        <%}%>
+                                            <%if(page < totalPages){%>
+                                                <li class="page-item"><a class="page-link"
+                                                        href="/admin/comments/?page=<%=page+1%>">&raquo;</a>
+                                                </li>
+                                                <%}%>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div><!--/.row-->
+</div>	<!--/.main-->
+
+<script src="js/jquery-1.11.1.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/bootstrap-table.js"></script>
+
+<%- include("../layout/footer.ejs")%>

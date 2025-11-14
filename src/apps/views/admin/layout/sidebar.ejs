@@ -1,0 +1,92 @@
+<div id="sidebar-collapse" class="col-sm-3 col-lg-2 sidebar">
+  <form role="search">
+    <div class="form-group">
+      <input type="text" class="form-control" placeholder="Search" />
+    </div>
+  </form>
+  <ul class="nav menu">
+    <li>
+      <a href="/admin/dashboard" id="dashboard-link"
+        ><svg class="glyph stroked dashboard-dial">
+          <use xlink:href="#stroked-dashboard-dial"></use>
+        </svg>
+        Dashboard</a
+      >
+    </li>
+    <li>
+      <a href="/admin/users" id="users-link"
+        ><svg class="glyph stroked male user">
+          <use xlink:href="#stroked-male-user" /></svg
+        >Quản lý thành viên</a
+      >
+    </li>
+    <li>
+      <a href="/admin/category" id="category-link"
+        ><svg class="glyph stroked open folder">
+          <use xlink:href="#stroked-open-folder" /></svg
+        >Quản lý danh mục</a
+      >
+    </li>
+    <li>
+      <a href="/admin/products" id="products-link"
+        ><svg class="glyph stroked bag">
+          <use xlink:href="#stroked-bag"></use></svg
+        >Quản lý sản phẩm</a
+      >
+    </li>
+    <li>
+      <a href="/admin/orders" id="products-link"
+        ><svg class="glyph stroked calendar">
+          <use xlink:href="#stroked-calendar" />
+        </svg>
+        Quản lý đơn hàng</a
+      >
+    </li>
+    <li>
+      <a href="/admin/comments" id="comments-link"
+        ><svg class="glyph stroked two messages">
+          <use xlink:href="#stroked-two-messages" />
+        </svg>
+        Quản lý bình luận</a
+      >
+    </li>
+    <li>
+      <a href="/admin/banners"
+        ><svg class="glyph stroked chain">
+          <use xlink:href="#stroked-chain" />
+        </svg>
+        Quản lý banner</a
+      >
+    </li>
+    <li>
+      <a href="/admin/sliders"
+        ><svg class="glyph stroked chain">
+          <use xlink:href="#stroked-chain" />
+        </svg>
+        Quản lý slider</a
+      >
+    </li>
+    <li>
+      <a href="/admin/configs"
+        ><svg class="glyph stroked gear">
+          <use xlink:href="#stroked-gear" />
+        </svg>
+        Cấu hình</a
+      >
+    </li>
+  </ul>
+
+  <script>
+    // Lấy đường dẫn hiện tại
+    const currentPath = window.location.pathname;
+
+    // Xác định li nào phải được active
+    const links = document.querySelectorAll(".nav.menu a");
+    links.forEach((link) => {
+      if (link.getAttribute("href") === currentPath) {
+        link.parentElement.classList.add("active");
+      }
+    });
+  </script>
+</div>
+<!--/.sidebar-->

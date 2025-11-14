@@ -1,0 +1,47 @@
+<%- include("../layout/head.ejs", {title: "Edit Comment"}) %>
+<%- include("../layout/header.ejs") %>
+<%- include("../layout/sidebar.ejs") %>
+
+<div class="col-sm-9 col-sm-offset-3 col-lg-10 col-lg-offset-2 main">			
+    <div class="row">
+        <ol class="breadcrumb">
+            <li><a href="#"><svg class="glyph stroked home"><use xlink:href="#stroked-home"></use></svg></a></li>
+            <li><a href="/admin/comments">Quản lý bình luận</a></li>
+            <li class="active">Chỉnh sửa bình luận</li>
+        </ol>
+    </div><!--/.row-->
+    
+    <div class="row">
+        <div class="col-lg-12">
+            <h1 class="page-header">Chỉnh sửa bình luận</h1>
+        </div>
+    </div><!--/.row-->
+    
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div class="col-md-6">
+                        <form action="/admin/comments/update/<%=comment._id%>" method="post" enctype="multipart/form-data" role="form">
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" name="email" class="form-control" value="<%=comment.email%>" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>Tên</label>
+                                <input type="text" name="full_name" class="form-control" value="<%=comment.full_name%>" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>Nội dung</label>
+                                <textarea name="body" rows="5" class="form-control"><%=comment.body%></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Cập nhật</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div><!-- /.col-->
+    </div><!-- /.row -->
+</div><!--/.main-->
+
+<%- include("../layout/footer.ejs") %>

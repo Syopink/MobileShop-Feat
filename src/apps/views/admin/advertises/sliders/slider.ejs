@@ -1,0 +1,86 @@
+<%- include("../..//layout/head.ejs", {title: "Products Manager"})%>
+<%- include("../../layout/header.ejs")%>
+<%- include("../../layout/sidebar.ejs")%>
+<div class="col-sm-9 col-sm-offset-3 col-lg-10 col-lg-offset-2 main">			
+		<div class="row">
+			<ol class="breadcrumb">
+				<li><a href="#"><svg class="glyph stroked home"><use xlink:href="#stroked-home"></use></svg></a></li>
+				<li class="active">Danh sách slider</li>
+			</ol>
+		</div><!--/.row-->
+		
+		<div class="row">
+			<div class="col-lg-12">
+				<h1 class="page-header">Danh sách Slider</h1>
+			</div>
+		</div><!--/.row--> 
+		<div id="toolbar" class="btn-group">
+            <a href="/admin/create-slider" class="btn btn-success">
+                <i class="glyphicon glyphicon-plus"></i> Thêm slider
+            </a>
+        </div>
+		<div class="row">
+			<div class="col-lg-12">
+				<div class="panel panel-default">
+					<div class="panel-body">
+                        <table 
+                            data-toolbar="#toolbar"
+                            data-toggle="table">
+
+						    <thead>
+						    <tr>
+						        <th data-field="id" data-sortable="true">ID</th>
+						        <th data-field="name"  data-sortable="true">Tên slider</th>
+                                <th>Ảnh slider</th>
+                                <th  data-sortable="true">Hành động</th>
+                                
+                
+                              
+						    </tr>
+                            </thead>
+                            <tbody>
+                                    <%for(let slider of sliders){%>
+                                    <tr>
+                                        <td style="">1</td>
+                                        <td style=""><%=slider.name%></td>
+                                        <td style="text-align: center"><img class="img-fluid"   src="../uploads/images/<%=slider.thumbnails%>" /></td>
+                                        
+                                        <td class="form-group">
+                                            <a href="/admin/delete-sliders/<%=slider._id%>" class="btn btn-primary"><i class="glyphicon glyphicon-pencil"></i></a>
+                                            <a href="/admin/delete-sliders/<%=slider._id%>" class="btn btn-danger"><i class="glyphicon glyphicon-remove"></i></a>
+                                        </td>
+                                    </tr>
+                                    <%}%>
+                                 </tbody>
+						</table>
+                    </div>
+                    <div class="panel-footer">
+                        <nav aria-label="Page navigation example">
+                            <ul class="pagination">
+                                <%if(page > 1){%>
+                                <li class="page-item"><a class="page-link" href="../../admin/products/?page=<%=page-1%>">&laquo;</a></li>
+                                <%}%>
+                                <%for(let item of pages){%>
+                                <li class="page-item <%= item === page? 'active' : '' %>">
+                                    <%if(item === "..."){%>
+                                    <span class="page-link"><%=item%></span>
+                                    <%}else{%>
+                                    <a class="page-link" href="../../admin/products/?page=<%= item%>"><%=item%></a>
+                                    <%}%>
+                                </li>
+                                <%}%>
+                                <%if(page < totalPages){%>
+                                <li class="page-item"><a class="page-link" href="#">&raquo;</a></li>
+                                <%}%>
+                            </ul>
+                        </nav>
+                    </div>
+				</div>
+			</div>
+		</div><!--/.row-->	
+	</div>	<!--/.main-->
+
+	<script src="js/jquery-1.11.1.min.js"></script>
+	<script src="js/bootstrap.min.js"></script>
+    <script src="js/bootstrap-table.js"></script>	
+<%- include("../../layout/footer.ejs")%>
