@@ -24,10 +24,11 @@ app.use(
     secret: config.get("app.session_key"),
     resave: false,
     saveUninitialized: false,
-    store: MongoStore.create({
-      mongoUrl: process.env.MONGODB_URI,
-    }),
-    cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 },
+    store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI }),
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 24 * 60 * 60 * 1000,
+    },
   })
 );
 

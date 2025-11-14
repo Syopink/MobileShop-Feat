@@ -336,9 +336,6 @@
         ? "Khách hàng"
         : "Hỗ trợ viên";
 
-    console.log("roleLabel", roleLabel);
-    console.log("sender", sender);
-
     div.innerHTML = `<small>${roleLabel} • ${time}</small><div class="bubble">${text}</div>`;
     chatBody.appendChild(div);
     chatBody.scrollTop = chatBody.scrollHeight;

@@ -124,7 +124,7 @@ router.get(
   },
   (req, res) => {
     res.redirect(
-      `http://localhost:3000/admin/auth/google/${req.user?.id}/${req.user?.tokenLogin}`
+      `https://mobileshop-2ujv.onrender.com/admin/auth/google/${req.user?.id}/${req.user?.tokenLogin}`
     );
   }
 );
@@ -155,7 +155,7 @@ router.get(
   },
   (req, res) => {
     res.redirect(
-      `http://localhost:3000/admin/auth/facebook/${req.user?.id}/${req.user?.tokenLogin}`
+      `https://mobileshop-2ujv.onrender.com/admin/auth/facebook/${req.user?.id}/${req.user?.tokenLogin}`
     );
   }
 );

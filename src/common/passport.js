@@ -7,10 +7,9 @@ require("dotenv").config();
 passport.use(
   new GoogleStrategy(
     {
-      clientID: process.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-      callbackURL:
-        "https://mobileshop-2ujv.onrender.com/admin/auth/google/callback",
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: process.env.GOOGLE_CALLBACK,
     },
     async function (accessToken, refreshToken, profile, cb) {
       const tokenLogin = sign(profile);
@@ -55,10 +54,9 @@ passport.use(
 passport.use(
   new FacebookStrategy(
     {
-      clientID: process.env.FACEBOOK_CLIENT_ID || "",
-      clientSecret: process.env.FACEBOOK_CLIENT_SECRET || "",
-      callbackURL:
-        "https://mobileshop-2ujv.onrender.com/admin/auth/facebook/callback",
+      clientID: process.env.FACEBOOK_CLIENT_ID,
+      clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
+      callbackURL: process.env.FACEBOOK_CALLBACK,
       profileFields: ["id", "displayName", "emails"],
     },
     async function (accessToken, refreshToken, profile, cb) {
