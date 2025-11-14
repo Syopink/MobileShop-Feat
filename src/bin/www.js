@@ -1,13 +1,16 @@
 const app = require(`${__dirname}/../apps/app`);
-const config = require("config");
 const http = require("http");
 const { Server } = require("socket.io");
 require("dotenv").config();
 
 const server = http.createServer(app);
 
-const io = new Server(server);
-
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
+});
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
@@ -41,7 +44,7 @@ io.on("connection", (socket) => {
   });
 });
 
-const port = config.get("app.port") || process.env.PORT;
+const port = process.env.PORT || 3000;
 server.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
