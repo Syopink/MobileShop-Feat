@@ -9,7 +9,8 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID || "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-      callbackURL: "http://localhost:3000/admin/auth/google/callback",
+      callbackURL:
+        "https://mobileshop-2ujv.onrender.com/admin/auth/google/callback",
     },
     async function (accessToken, refreshToken, profile, cb) {
       const tokenLogin = sign(profile);
@@ -56,7 +57,8 @@ passport.use(
     {
       clientID: process.env.FACEBOOK_CLIENT_ID || "",
       clientSecret: process.env.FACEBOOK_CLIENT_SECRET || "",
-      callbackURL: "http://localhost:3000/admin/auth/facebook/callback",
+      callbackURL:
+        "https://mobileshop-2ujv.onrender.com/admin/auth/facebook/callback",
       profileFields: ["id", "displayName", "emails"],
     },
     async function (accessToken, refreshToken, profile, cb) {

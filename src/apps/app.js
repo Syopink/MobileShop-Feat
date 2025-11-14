@@ -6,6 +6,8 @@ const session = require("express-session");
 const { populate } = require("./models/product");
 const cookieParser = require("cookie-parser");
 const chatbotRoute = require("../routers/chatbot");
+const MongoStore = require("connect-mongo");
+
 require("../common/passport");
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
@@ -21,8 +23,11 @@ app.use(
   session({
     secret: config.get("app.session_key"),
     resave: false,
-    saveUninitialized: true,
-    cookie: { secure: config.get("app.session_secure") },
+    saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGO_URL,
+    }),
+    cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 },
   })
 );
 
