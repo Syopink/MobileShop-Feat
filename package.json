@@ -44,7 +44,6 @@
     "request": "^2.88.2",
     "slug": "^8.2.3",
     "socket.io": "^4.8.1",
-    "unidecode": "^1.0.1",
-    "vn-badwords": "^1.2.1-fix-2"
+    "unidecode": "^1.0.1"
   }
 }
