@@ -1,0 +1,460 @@
+<%- include("layouts/head.ejs", {title:"Giỏ hàng"})%> <%-
+include("layouts/header.ejs")%> <%- include("layouts/menu.ejs")%> <%-
+include("layouts/slider.ejs")%>
+
+<!--	Cart	-->
+<div id="my-cart">
+  <!-- Header giỏ hàng -->
+  <div class="row">
+    <div class="cart-nav-item col-lg-1 col-md-1 col-sm-12 text-center">
+      Chọn
+    </div>
+    <div class="cart-nav-item col-lg-6 col-md-6 col-sm-12">
+      Thông tin sản phẩm
+    </div>
+    <div class="cart-nav-item col-lg-2 col-md-2 col-sm-12">Số lượng</div>
+    <div class="cart-nav-item col-lg-3 col-md-3 col-sm-12">Giá</div>
+  </div>
+
+  <!-- FORM ĐẶT HÀNG - Bọc toàn bộ giỏ hàng + thông tin khách -->
+  <form method="post" action="/order" id="orderForm">
+    <% for (let item of items) { %>
+    <div class="cart-item row">
+      <!-- Checkbox thuộc form ORDER -->
+      <div
+        class="cart-select col-lg-1 col-md-1 col-sm-12 d-flex align-items-center justify-content-center"
+      >
+        <input
+          type="checkbox"
+          class="item-check"
+          name="productsSelected[]"
+          value="<%= item._id %>"
+          checked
+        />
+      </div>
+
+      <div class="cart-thumb col-lg-6 col-md-6 col-sm-12">
+        <img src="../uploads/images/<%=item.thumbnail%>" />
+        <h4><%= item.name %></h4>
+        <% if (item.promotion) { %>
+        <p style="color: #d9534f; font-weight: bold; margin-top: 5px">
+          🎁 Khuyến mại: <%= item.promotion %>
+        </p>
+        <% } %>
+      </div>
+
+      <!-- Input số lượng - KHÔNG thuộc form nào -->
+      <div class="cart-quantity col-lg-2 col-md-2 col-sm-12">
+        <input
+          data-item-id="<%= item._id %>"
+          type="number"
+          class="form-control form-blue quantity"
+          value="<%=item.qty%>"
+          min="1"
+        />
+      </div>
+
+      <div class="cart-price col-lg-3 col-md-3 col-sm-12">
+        <b><%= vndPrice(item.qty * item.price) %></b>
+        <a href="/delete-item-cart-<%=item._id%>">Xóa</a>
+      </div>
+    </div>
+    <% } %>
+
+    <!-- Tổng cộng -->
+    <div class="row mt-3">
+      <div class="cart-thumb col-lg-7 col-md-7 col-sm-12">
+        <button id="update-cart" class="btn btn-success" type="button">
+          Cập nhật giỏ hàng
+        </button>
+      </div>
+
+      <div class="cart-total col-lg-2 col-md-2 col-sm-12 text-end">
+        <b>Tạm tính:</b>
+      </div>
+      <div class="cart-price col-lg-3 col-md-3 col-sm-12 text-end">
+        <b id="subtotal"
+          ><%= vndPrice(items.reduce((total, item) => total + item.qty *
+          item.price, 0)) %></b
+        >
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="cart-total col-lg-9 col-md-9 col-sm-12 text-end">
+        <b>Phí vận chuyển:</b>
+      </div>
+      <div class="cart-price col-lg-3 col-md-3 col-sm-12 text-end">
+        <b id="shipping"><%= vndPrice(shippingFee) %></b>
+      </div>
+    </div>
+
+    <div class="row border-top pt-2 mt-2">
+      <div class="cart-total col-lg-9 col-md-9 col-sm-12 text-end">
+        <b>Tổng thanh toán:</b>
+      </div>
+      <div class="cart-price col-lg-3 col-md-3 col-sm-12 text-end">
+        <b id="total" style="color: #d9534f; font-size: 18px">
+          <%= vndPrice(items.reduce((total, item) => total + item.qty *
+          item.price, 0) + shippingFee) %>
+        </b>
+      </div>
+    </div>
+
+    <!-- Customer Info -->
+    <div id="customer" class="mt-4">
+      <% if (customer) { %>
+      <div class="row">
+        <div class="col-lg-4 col-md-4 col-sm-12 mb-2">
+          <label>Họ tên:</label>
+          <input
+            type="text"
+            name="name"
+            class="form-control"
+            value="<%= customer.full_name %>"
+            readonly
+          />
+        </div>
+        <div class="col-lg-4 col-md-4 col-sm-12 mb-2">
+          <label>Số điện thoại:</label>
+          <input
+            type="text"
+            name="phone"
+            class="form-control"
+            value="<%= customer.phone %>"
+            readonly
+          />
+        </div>
+        <div class="col-lg-4 col-md-4 col-sm-12 mb-2">
+          <label>Email:</label>
+          <input
+            type="email"
+            name="email"
+            class="form-control"
+            value="<%= customer.email %>"
+            readonly
+          />
+        </div>
+      </div>
+      <% } else { %>
+      <div class="row">
+        <div class="col-lg-4 col-md-4 col-sm-12 mb-2">
+          <label>Họ tên:</label>
+          <input
+            type="text"
+            name="name"
+            class="form-control"
+            placeholder="Nhập họ tên"
+            required
+          />
+        </div>
+        <div class="col-lg-4 col-md-4 col-sm-12 mb-2">
+          <label>Số điện thoại:</label>
+          <input
+            type="text"
+            name="phone"
+            class="form-control"
+            placeholder="Nhập số điện thoại"
+            required
+          />
+        </div>
+        <div class="col-lg-4 col-md-4 col-sm-12 mb-2">
+          <label>Email:</label>
+          <input
+            type="email"
+            name="email"
+            class="form-control"
+            placeholder="Nhập email"
+            required
+          />
+        </div>
+      </div>
+      <% } %>
+
+      <!-- Địa chỉ -->
+      <div class="col-lg-12 col-md-12 col-sm-12 mb-3 p-0">
+        <label>Địa chỉ chi tiết:</label>
+        <input
+          type="text"
+          name="address"
+          class="form-control"
+          placeholder="Số nhà, tên đường..."
+          value="<%= customer?.address || '' %>"
+          required
+        />
+
+        <label class="mt-2">Địa chỉ giao hàng:</label>
+        <div class="row">
+          <div class="col-md-4">
+            <select
+              class="form-control"
+              name="province_id"
+              id="province"
+              required
+            >
+              <option value="">Chọn tỉnh/thành</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <select
+              class="form-control"
+              name="district_id"
+              id="district"
+              required
+            >
+              <option value="">Chọn quận/huyện</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <select class="form-control" name="ward_code" id="ward" required>
+              <option value="">Chọn phường/xã</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2 nút submit -->
+      <div class="row mt-3">
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-2">
+          <button
+            type="submit"
+            name="payment_method"
+            value="cod"
+            class="btn btn-danger w-100"
+          >
+            <b style="color: white">Mua ngay (COD)</b>
+            <span class="d-block" style="color: white"
+              >Giao hàng tận nơi siêu tốc</span
+            >
+          </button>
+        </div>
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-2">
+          <button
+            type="submit"
+            name="payment_method"
+            value="vnpay"
+            class="btn btn-primary w-100"
+          >
+            <b style="color: white">Thanh toán Online</b>
+            <span class="d-block" style="color: white"
+              >Thanh toán qua VNPAY</span
+            >
+          </button>
+        </div>
+      </div>
+  </form>
+
+    </div>
+    
+</div>
+</div>
+
+<script>
+  const provinceSelect = document.getElementById("province");
+  const districtSelect = document.getElementById("district");
+  const wardSelect = document.getElementById("ward");
+  const checkboxes = document.querySelectorAll(".item-check");
+  const qtyInputs = document.querySelectorAll(".quantity");
+  const subtotalEl = document.getElementById("subtotal");
+  const shippingEl = document.getElementById("shipping");
+  const totalEl = document.getElementById("total");
+
+  const savedProvinceId = "<%= customer?.province_id || '' %>";
+  const savedDistrictId = "<%= customer?.district_id || '' %>";
+  const savedWardCode = "<%= customer?.ward_code || '' %>";
+
+  // Load địa chỉ
+  fetch(
+    "https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/province",
+    {
+      method: "GET",
+      headers: { token: "1755fed2-bf9b-11f0-a51e-f64be07fcf0a" },
+    }
+  )
+    .then((res) => res.json())
+    .then((data) => {
+      data.data.forEach((province) => {
+        const opt = document.createElement("option");
+        opt.value = province.ProvinceID;
+        opt.text = province.ProvinceName;
+        if (String(province.ProvinceID) === savedProvinceId)
+          opt.selected = true;
+        provinceSelect.add(opt);
+      });
+      if (savedProvinceId) loadDistricts(savedProvinceId);
+    });
+
+  function loadDistricts(provinceId) {
+    fetch(
+      "https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/district",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          token: "1755fed2-bf9b-11f0-a51e-f64be07fcf0a",
+        },
+        body: JSON.stringify({ province_id: Number(provinceId) }),
+      }
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        districtSelect.innerHTML = '<option value="">Chọn quận/huyện</option>';
+        data.data.forEach((district) => {
+          const opt = document.createElement("option");
+          opt.value = district.DistrictID;
+          opt.text = district.DistrictName;
+          if (String(district.DistrictID) === savedDistrictId)
+            opt.selected = true;
+          districtSelect.add(opt);
+        });
+        if (savedDistrictId) loadWards(savedDistrictId);
+      });
+  }
+
+  function loadWards(districtId) {
+    fetch(
+      `https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/ward?district_id=${districtId}`,
+      {
+        method: "GET",
+        headers: { token: "1755fed2-bf9b-11f0-a51e-f64be07fcf0a" },
+      }
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>';
+        data.data.forEach((ward) => {
+          const opt = document.createElement("option");
+          opt.value = ward.WardCode;
+          opt.text = ward.WardName;
+          if (String(ward.WardCode) === savedWardCode) opt.selected = true;
+          wardSelect.add(opt);
+        });
+      });
+  }
+
+  provinceSelect.addEventListener("change", () => {
+    districtSelect.innerHTML = '<option value="">Chọn quận/huyện</option>';
+    wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>';
+    if (provinceSelect.value) loadDistricts(provinceSelect.value);
+  });
+
+  districtSelect.addEventListener("change", () => {
+    wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>';
+    if (districtSelect.value) loadWards(districtSelect.value);
+  });
+
+  // Lấy items được chọn
+  function getSelectedItems() {
+    const selected = [];
+    checkboxes.forEach((checkbox) => {
+      if (checkbox.checked) {
+        const itemId = checkbox.value;
+        const qtyInput = document.querySelector(
+          `.quantity[data-item-id="${itemId}"]`
+        );
+        const priceText = checkbox
+          .closest(".cart-item")
+          .querySelector(".cart-price b").textContent;
+        const price = parseInt(priceText.replace(/[^\d]/g, ""));
+        const qty = parseInt(qtyInput.value);
+
+        selected.push({ _id: itemId, qty: qty, price: price / qty });
+      }
+    });
+    return selected;
+  }
+
+  // Format VND
+  function formatVND(amount) {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(amount);
+  }
+
+  // Cập nhật tổng tiền
+  async function updateTotal() {
+    const selectedItems = getSelectedItems();
+    const district = districtSelect.value;
+    const ward = wardSelect.value;
+
+    const subtotal = selectedItems.reduce(
+      (sum, item) => sum + item.price * item.qty,
+      0
+    );
+    subtotalEl.textContent = formatVND(subtotal);
+
+    if (!district || !ward || selectedItems.length === 0) {
+      shippingEl.textContent = formatVND(0);
+      totalEl.textContent = formatVND(subtotal);
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/calculate-shipping", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          district_id: district,
+          ward_code: ward,
+          selectedItems: selectedItems.map((i) => i._id),
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        const shipping = data.shippingFee;
+        shippingEl.textContent = formatVND(shipping);
+        totalEl.textContent = formatVND(subtotal + shipping);
+      }
+    } catch (err) {
+      console.error("Lỗi tính phí ship:", err);
+    }
+  }
+
+  checkboxes.forEach((cb) => cb.addEventListener("change", updateTotal));
+  qtyInputs.forEach((input) => input.addEventListener("change", updateTotal));
+  districtSelect.addEventListener("change", updateTotal);
+  wardSelect.addEventListener("change", updateTotal);
+
+  // Cập nhật giỏ hàng
+  document.getElementById("update-cart").addEventListener("click", async () => {
+    const products = {};
+    qtyInputs.forEach((input) => {
+      const itemId = input.dataset.itemId;
+      products[itemId] = { qty: input.value };
+    });
+
+    const formData = new URLSearchParams();
+    Object.keys(products).forEach((id) => {
+      formData.append(`products[${id}][qty]`, products[id].qty);
+    });
+
+    await fetch("/update-item-cart", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: formData,
+    });
+
+    location.reload();
+  });
+
+  // Validation form đặt hàng
+  document.getElementById("orderForm").addEventListener("submit", function (e) {
+    const selectedItems = getSelectedItems();
+
+    if (selectedItems.length === 0) {
+      e.preventDefault();
+      alert("Vui lòng chọn ít nhất 1 sản phẩm để đặt hàng!");
+      return false;
+    }
+
+    if (!districtSelect.value || !wardSelect.value) {
+      e.preventDefault();
+      alert("Vui lòng chọn đầy đủ địa chỉ giao hàng!");
+      return false;
+    }
+  });
+</script>
+
+<%- include("layouts/sidebar.ejs")%> <%- include("layouts/footer.ejs")%>

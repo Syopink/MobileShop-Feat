@@ -1,0 +1,33 @@
+<div class="row">
+  <div id="main" class="col-lg-8 col-md-12 col-sm-12">
+      <!--	Slider	-->
+      <div id="slide" class="carousel slide" data-ride="carousel">
+
+        <!-- Indicators -->
+        <ul class="carousel-indicators">
+          <% for(let i = 0; i < sliders.length; i++) { %>
+            <li data-target="#slide" data-slide-to="<%= i %>" class="<%= i === 0 ? 'active' : '' %>"></li>
+          <% } %>
+        </ul>
+      
+         <!-- The slideshow -->
+         <div class="carousel-inner">
+
+          <% sliders.forEach((slider, index) => { %>
+                      <div class="carousel-item <%= index === 0 ? 'active' : '' %>">
+                        <img src="../uploads/images/<%=slider.thumbnails %>" alt="Huy Academy">
+                      </div>
+                    <% }) %>
+          
+        </div>
+      <%if(sliders.length>0){%>
+        <!-- Left and right controls -->
+        <a class="carousel-control-prev" href="#slide" data-slide="prev">
+          <span class="carousel-control-prev-icon"></span>
+        </a>
+        <a class="carousel-control-next" href="#slide" data-slide="next">
+          <span class="carousel-control-next-icon"></span>
+        </a>
+      
+      <%}%></div>
+      <!--	End Slider	-->

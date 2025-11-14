@@ -1,0 +1,129 @@
+<%- include("../layout/head.ejs", {title: "User Manager"})%>
+<%- include("../layout/header.ejs")%>
+<%- include("../layout/sidebar.ejs")%>
+	<div class="col-sm-9 col-sm-offset-3 col-lg-10 col-lg-offset-2 main">			
+		<div class="row">
+			<ol class="breadcrumb">
+				<li><a href="/admin/dashboard"><svg class="glyph stroked home"><use xlink:href="#stroked-home"></use></svg></a></li>
+				<li class="active">Danh sách thành viên</li>
+			</ol>
+		</div><!--/.row-->
+		<div class="row">
+			<div class="col-lg-12">
+				<h1 class="page-header">Danh sách thành viên</h1>
+			</div>
+		</div><!--/.row-->
+		<div id="toolbar" class="btn-group">
+            <a href="/admin/users/create" class="btn btn-success">
+                <i class="glyphicon glyphicon-plus"></i> Thêm thành viên
+            </a>
+        </div>
+		<div class="row">
+			<div class="col-lg-12">
+				<div class="panel panel-default">
+					<div class="panel-body">
+                        <table 
+                            data-toolbar="#toolbar"
+                            data-toggle="table">
+
+						    <thead>
+						    <tr>
+						        <th data-field="id" data-sortable="true">ID</th>
+						        <th data-field="name"  data-sortable="true">Họ & Tên</th>
+                                <th data-field="price" data-sortable="true">Email</th>
+                                <th>Quyền</th>
+                                <th>Hành động</th>
+                                <th>Chọn</th>
+						    </tr>
+                            </thead>
+                            <tbody>
+                                <% let idCounter = 1;%>
+                                <%for(let user of users){%> 
+                                <tr>
+                                    <td><%= idCounter++%></td>
+                                    <td><%=user.full_name%></td>
+                                    <td><%=user.email%></td>
+                                    <td><span class="label label-<%= user.role === 'admin' ? 'danger' : 'warning'%>"><%=user.role%></span></td>
+                                    <td class="form-group">
+                                        <a href="/admin/users/edit/<%=user._id%>" class="btn btn-primary"><i class="glyphicon glyphicon-pencil"></i></a>
+                                        <a onclick="clickDelete('<%=user._id%>')" class="btn btn-danger"><i class="glyphicon glyphicon-remove"></i></a>
+                                    </td>
+                                    <td>
+                                        <input class="select-checkbox" style="cursor: pointer;" name="idsPrd[]" type="checkbox" value="<%=user._id%>" />
+                                      </td>
+                                </tr>
+                                <%}%>
+                            </tbody>
+						</table>
+                        <div style="display: flex; justify-content: end; margin-top: 10px;">
+                            <a onclick="clickDeleteChecked()" class="btn btn-danger" style="margin-right: 5px;">Xóa các ô đã chọn</a>
+                            <a onclick="selectAllCheckbox()" class="btn btn-warning">Chọn tất cả</a>
+                          </div>
+                    </div>
+                    <div class="panel-footer">
+                        <div id="toolbar" class="btn-group">
+                            <a href="/admin/users/trash" class="btn btn-info">
+                              <i class="glyphicon glyphicon-trash"></i> Thành viên đã xóa
+                            </a>
+                          </div>
+                        <nav aria-label="Page navigation example">
+                            <ul class="pagination">
+                                <%if(page > 1){%>
+                                <li class="page-item"><a class="page-link" href="/admin/users/?page=<%=page-1%>">&laquo;</a></li>
+                                <%}%>
+                                <%for(let item of pages){%>
+                                <li class="page-item <%= item === page? 'active' : '' %>">
+                                    <%if(item === "..."){%>
+                                    <span class="page-link"><%=item%></span>
+                                    <%}else{%>
+                                    <a class="page-link" href="/admin/users/?page=<%= item%>"><%=item%></a>
+                                    <%}%>
+                                </li>
+                                <%}%>
+                                <%if(page < totalPages){%>
+                                <li class="page-item"><a class="page-link" href="/admin/users/?page=<%=page+1%>">&raquo;</a></li>
+                                <%}%>
+                            </ul>
+                        </nav>
+                    </div>
+				</div>
+			</div>
+		</div><!--/.row-->	
+	</div>	<!--/.main-->
+
+	<script src="js/jquery-1.11.1.min.js"></script>
+	<script src="js/bootstrap.min.js"></script>
+    <script src="js/bootstrap-table.js"></script>
+    <script>
+        function handleConfirm(id, action) {
+          const isConfirm = confirm(`Bạn có chắc chắn ${action} không?`)
+          const link = () => window.location.href = `/admin/users/${action}/${id}`
+          return isConfirm ? link() : false
+        }
+        const clickDelete = (id) => handleConfirm(id, 'delete')
+      </script>
+
+<script>
+    function selectAllCheckbox() {
+      const allCheckbox = document.querySelectorAll('.select-checkbox')
+      allCheckbox.forEach(select => select.checked = !select.checked)
+    }
+  </script>
+  
+  <script>
+    function handleChecked(action) {
+      const allCheckedbox = document.querySelectorAll('.select-checkbox:checked')
+      const arrIdsValue = Array.from(allCheckedbox).map(i => i.value)
+      const strIdsValue = arrIdsValue.join(',')
+      if (!strIdsValue) {
+        alert('Bạn chưa chọn ô nào!')
+        return false
+      } else {
+        const isConfirm = confirm(`Bạn có muốn ${action} các thành viên đã chọn không?`)
+        const link = () => window.location.href = `/admin/users/${action}/${strIdsValue}`
+        return isConfirm ? link() : false
+      }
+    }
+    const clickDeleteChecked = () => handleChecked('delete')
+  </script>	
+<%- include("../layout/footer.ejs")%>

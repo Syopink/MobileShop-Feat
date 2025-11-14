@@ -1,0 +1,224 @@
+<%- include("../layout/head.ejs", {title: "Products Manager" })%>
+    <%- include("../layout/header.ejs")%>
+        <%- include("../layout/sidebar.ejs")%>
+            <div class="col-sm-9 col-sm-offset-3 col-lg-10 col-lg-offset-2 main">
+                <div class="row">
+                    <ol class="breadcrumb">
+                        <li><a href="/admin/dashboard"><svg class="glyph stroked home">
+                                    <use xlink:href="#stroked-home"></use>
+                                </svg></a></li>
+                        <li class="active">Danh sách sản phẩm</li>
+                    </ol>
+                </div><!--/.row-->
+
+                <div class="row">
+                    <div class="col-lg-12">
+                        <h1 class="page-header">Danh sách sản phẩm</h1>
+                    </div>
+                </div><!--/.row-->
+                <div id="toolbar" class="btn-group">
+                    <a href="/admin/products/create" class="btn btn-success">
+                        <i class="glyphicon glyphicon-plus"></i> Thêm sản phẩm
+                    </a>
+                </div>
+                <!-- Thêm select box mới và nút submit vào đây -->
+                <div class="row">
+                    <div class="col-lg-3">
+                        <form method="get" action="/admin/products">
+    <div class="form-group">
+        <label for="category_select">Phân loại danh mục:</label>
+        <select class="form-control" id="category_select" name="category">
+            <option value="">Tất cả danh mục</option>
+            <% for(let category of categories){ %>
+                <option value="<%= category._id %>" <%= category._id.toString() === categoryId ? "selected" : ""%>>
+                    <%= category.title %>
+                </option>
+            <% } %>
+        </select>
+    </div>
+
+    <div class="form-group" style="margin-top: 10px;">
+        <label for="search_name">Tìm kiếm sản phẩm:</label>
+        <input type="text" class="form-control" id="search_name" name="search" value="<%= typeof search !== 'undefined' ? search : '' %>">
+    </div>
+
+    <div class="form-group" style="margin-top: 10px;">
+        <label>Khoảng giá:</label>
+        <div class="row">
+            <div class="col-xs-6">
+                <input type="number" class="form-control" name="minPrice" placeholder="Giá từ" value="<%= typeof minPrice !== 'undefined' ? minPrice : '' %>">
+            </div>
+            <div class="col-xs-6">
+                <input type="number" class="form-control" name="maxPrice" placeholder="Giá đến" value="<%= typeof maxPrice !== 'undefined' ? maxPrice : '' %>">
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Lọc</button>
+</form>
+
+
+                    </div>
+                </div>
+                <!-- Kết thúc phần select box và nút submit -->
+
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="panel panel-default">
+                            <div class="panel-body">
+                                <table data-toolbar="#toolbar" data-toggle="table">
+                                    <thead>
+                                        <tr>
+                                            <th data-field="id" data-sortable="true">ID</th>
+                                            <th data-field="name" data-sortable="true">Tên sản phẩm</th>
+                                            <th data-field="price" data-sortable="true">Giá</th>
+                                            <th>Ảnh sản phẩm</th>
+                                            <th>Trạng thái</th>
+                                            <th>Danh mục</th>
+                                            <th>Hành động</th>
+                                            <th>Chọn</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% if(products.length === 0){ %>
+                                            <tr>
+                                                <td colspan="8">Không có sản phẩm nào</td>
+                                            </tr>
+                                        <% } else { %>
+                                            <% let productsCount=1;%>
+                                            <% for(let product of products){ %>
+                                                <tr>
+                                                    <td>
+                                                        <%= productsCount ++%>
+                                                    </td>
+                                                    <td>
+                                                        <%=product.name%>
+                                                    </td>
+                                                    <td>
+                                                        <%=vndPrice(product.price)%>
+                                                    </td>
+                                                      <td style="text-align: center">
+                                                        <img width="130" height="180" src="../uploads/images/<%=product.thumbnail%>" />
+                                                    </td>
+                                                    <td>
+                                                        <span class="label label-<%= product.is_stock ? 'success' : 'danger'%>">
+                                                            <% if(product.is_stock){ %>
+                                                                <span>Còn hàng</span>
+                                                            <% } else { %>
+                                                                <span>Hết hàng</span>
+                                                            <% } %>
+                                                        </span>
+                                                    </td>
+                                                    <% if(product.cat_id && product.cat_id.title){ %>
+                                                        <td>
+                                                            <%=product.cat_id.title%>
+                                                        </td>
+                                                    <% } else if(product.cat_id === null && rootCategory ) { %>
+                                                        <td>
+                                                            <%rootCategory.title%>
+                                                        </td>
+                                                    <% }else{ %>
+                                                        <td>
+                                                            N/A
+                                                        </td>
+                                                        <%}%>
+                                                    <td class="form-group">
+                                                        <a href="/admin/products/edit/<%=product._id%>" class="btn btn-primary">
+                                                            <i class="glyphicon glyphicon-pencil"></i>
+                                                        </a>
+                                                        <a onclick="clickDelete('<%= product._id%>')" class="btn btn-danger">
+                                                            <i class="glyphicon glyphicon-remove"></i>
+                                                        </a>
+                                                    </td>
+                                                    <td>
+                                                        <input class="select-checkbox" style="cursor: pointer;"  type="checkbox" value="<%=product._id%>" />
+                                                    </td>
+                                                </tr>
+                                            <% } %>
+                                        <% } %>
+                                        
+                                    </tbody>
+                                </table>
+                                <div style="display: flex; justify-content: end; margin-top: 10px;">
+                                    <a onclick="clickDeleteChecked()" class="btn btn-danger" style="margin-right: 5px;">Xóa các ô đã chọn</a>
+                                    <a onclick="selectAllCheckbox()" class="btn btn-warning">Chọn tất cả</a>
+                                  </div>
+                            </div>
+
+                            </div>
+                            <div class="panel-footer">
+                                <div id="toolbar" class="btn-group">
+                                    <a href="/admin/products/trash" class="btn btn-info">
+                                      <i class="glyphicon glyphicon-trash"></i> Sản phẩm đã xóa
+                                    </a> 
+                                <nav aria-label="Page navigation example">
+                                    <ul class="pagination">
+                                        <%if(page> 1){%>
+                                            <li class="page-item"><a class="page-link"
+                                                    href="/admin/products/?category=<%= categoryId%>&page=<%=page-1%>">&laquo;</a>
+                                            </li>
+                                            <%}%>
+                                                <%for(let item of pages){%>
+                                                    <li class="page-item <%= item === page? 'active' : '' %>">
+                                                        <%if(item==="..." ){%>
+                                                            <span class="page-link">
+                                                                <%=item%>
+                                                            </span>
+                                                            <%}else{%>
+                                                                <a class="page-link"
+                                                                    href="/admin/products/?category=<%= categoryId%>&page=<%= item%>">
+                                                                    <%=item%>
+                                                                </a>
+                                                                <%}%>
+                                                    </li>
+                                                    <%}%>
+                                                        <%if(page < totalPages){%>
+                                                            <li class="page-item"><a class="page-link"
+                                                                    href="/admin/products/?category=<%= categoryId%>&page=<%=page+1%>">&raquo;</a>
+                                                            </li>
+                                                            <%}%>
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div><!--/.row-->
+            </div> <!--/.main-->
+
+            <script src="js/jquery-1.11.1.min.js"></script>
+            <script src="js/bootstrap.min.js"></script>
+            <script src="js/bootstrap-table.js"></script>
+
+            <script>
+                function handleConfirm(id, action) {
+                  const isConfirm = confirm(`Bạn có chắc chắn ${action} không?`)
+                  const link = () => window.location.href = `/admin/products/${action}/${id}`
+                  return isConfirm ? link() : false
+                }
+                const clickDelete = (id) => handleConfirm(id, 'delete')
+              </script>
+        
+        <script>
+            function selectAllCheckbox() {
+              const allCheckbox = document.querySelectorAll('.select-checkbox')
+              allCheckbox.forEach(select => select.checked = !select.checked)
+            }
+          </script>
+          
+          <script>
+            function handleChecked(action) {
+              const allCheckedbox = document.querySelectorAll('.select-checkbox:checked')
+              const arrIdsValue = Array.from(allCheckedbox).map(i => i.value)
+              const strIdsValue = arrIdsValue.join(',')
+              if (!strIdsValue) {
+                alert('Bạn chưa chọn ô nào!')
+                return false
+              } else {
+                const isConfirm = confirm(`Bạn có muốn ${action} các sản phẩm đã chọn không?`)
+                const link = () => window.location.href = `/admin/products/${action}/${strIdsValue}`
+                return isConfirm ? link() : false
+              }
+            }
+            const clickDeleteChecked = () => handleChecked('delete')
+          </script>
+            <%- include("../layout/footer.ejs")%>

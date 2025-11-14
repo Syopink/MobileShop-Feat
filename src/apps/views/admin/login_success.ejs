@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MobileShop - Administrator - Login Success</title>
+  <base href="/static/admin/" />
+  <link href="css/bootstrap.min.css" rel="stylesheet">
+  <link href="css/datepicker3.css" rel="stylesheet">
+  <link href="css/bootstrap-table.css" rel="stylesheet">
+  <link href="css/styles.css" rel="stylesheet">
+
+  <!--[if lt IE 9]>
+<script src="js/html5shiv.js"></script>
+<script src="js/respond.min.js"></script>
+<![endif]-->
+
+</head>
+
+<body>
+
+  <div class="row">
+    <div class="col-xs-10 col-xs-offset-1 col-sm-8 col-sm-offset-2 col-md-4 col-md-offset-4">
+      <div class="login-panel panel panel-default">
+        <div class="panel-heading">MobileShop / Administrator / Verification Success</div>
+        <div class="panel-body">
+          <form role="form" method="post">
+            <fieldset>
+              <div class="form-group" style="display: flex; justify-content: center; align-items: center;">
+                <label style="margin-right: 20px;" class="text-primary">Đăng nhập tài khoản thành công!</label>
+                <a href="/admin/dashboard" type="submit" class="btn btn-warning">Về trang chủ!</a>
+              </div>
+            </fieldset>
+          </form>
+        </div>
+      </div>
+    </div><!-- /.col-->
+  </div><!-- /.row -->
+</body>
+
+<script>
+  setTimeout(() => {
+    window.location.href = `/admin/dashboard`
+  }, 3000)
+</script>
+
+</html>

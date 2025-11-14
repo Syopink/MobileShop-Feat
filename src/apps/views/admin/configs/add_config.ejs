@@ -1,0 +1,97 @@
+<%- include("../layout/head.ejs", {title: "MobileShop - AddConfig" }) -%>
+<%- include("../layout/header.ejs") -%>
+<%- include("../layout/sidebar.ejs") -%>
+
+<div class="col-sm-9 col-sm-offset-3 col-lg-10 col-lg-offset-2 main">
+  <div class="row">
+    <ol class="breadcrumb">
+      <li><a href="/admin/dashboard"><svg class="glyph stroked home">
+            <use xlink:href="#stroked-home"></use>
+          </svg></a></li>
+      <li><a href="/admin/configs">Quản lý cấu hình</a></li>
+      <li class="active">Thêm thông tin cấu hình</li>
+    </ol>
+  </div>
+  <!--/.row-->
+
+  <div class="row">
+    <div class="col-lg-12">
+      <h1 class="page-header">Thêm thông tin cấu hình</h1>
+    </div>
+  </div>
+  <!--/.row-->
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="panel panel-default">
+        <div class="panel-body">
+          <form role="form" method="post" action="/admin/create-config" enctype="multipart/form-data">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label>Giới thiệu về MobileShop</label>
+                <textarea required name="intro" class="form-control" rows="2"></textarea>
+              </div>
+
+              <div class="form-group">
+                <label>Địa chỉ</label>
+                <textarea required name="address" class="form-control" rows="2"></textarea>
+              </div>
+
+              <div class="form-group">
+                <label>Dịch vụ</label>
+                <textarea required name="service" class="form-control" rows="2"></textarea>
+              </div>
+              <div class="form-group">
+                <label>Footer</lael>
+                <textarea required name="footer" class="form-control" rows="2"></textarea>
+              </div>
+
+              <div class="form-group">
+                <div>
+                  <label>Hotline - Số điện thoại</label>
+                  <input required name="hotline_phone" type="number" class="form-control" value="">
+                </div>
+                <div>
+                  <label>Email</label>
+                  <input required name="hotline_email" type="text" class="form-control" value="">
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div style="padding-top: 10px ;" class="form-group">
+                <label style="font-size: 1.5rem;">Yêu Cầu Logo:</label>
+                <p>Chiều cao: <span>38px - 40px</span></p>
+                <p>Chiều rộng: <span>200px - 220px</span></p>
+              </div>
+
+              <div class="form-group">
+                <label>Ảnh logo header</label>
+                <input required name="logo_header" type="file">
+                <br>
+                <div>
+                  <img class="img-fluid" src="img/logo.png">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Ảnh logo footer</label>
+                <input required name="logo_footer" type="file">
+                </br>
+                <div>
+                  <img class="img-fluid" src="img/logo-footer.png">
+                </div>
+              </div>
+              
+              <button name="sbm" type="submit" class="btn btn-success">Thêm mới</button>
+              <button type="reset" class="btn btn-default">Làm mới</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div><!-- /.col-->
+  </div><!-- /.row -->
+
+</div>
+<!--/.main-->
+
+<%- include("../layout/footer.ejs") -%>

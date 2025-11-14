@@ -1,0 +1,26 @@
+<%- include("layouts/head.ejs", {title:"Tìm kiếm"})%> 
+<%- include("layouts/header.ejs")%> 
+<%- include("layouts/menu.ejs")%>
+<%- include("layouts/slider.ejs")%> 
+<!--	List Product	-->
+                <div class="products">
+    <div id="search-result">
+        Kết quả tìm kiếm với sản phẩm <span><%= keyword %></span>
+    </div>
+
+    <% if (products.length === 0) { %>
+        <div class="alert alert-warning mt-3">
+            Không tồn tại sản phẩm nào phù hợp với từ khóa "<%= keyword %>".
+        </div>
+    <% } else { %>
+        <div class="product-list card-deck">
+            <% for (let item of products) { %>
+                <%- include("./components/product_item.ejs", { item }) %>
+            <% } %>
+        </div>
+    <% } %>
+</div>
+                <!--	End List Product	-->
+            </div>
+<%- include("layouts/sidebar.ejs")%> 
+<%- include("layouts/footer.ejs")%>

@@ -1,0 +1,154 @@
+<%- include("../layout/head.ejs", {title: "Category Manager" })%>
+	<%- include("../layout/header.ejs")%>
+		<%- include("../layout/sidebar.ejs")%>
+			<div class="col-sm-9 col-sm-offset-3 col-lg-10 col-lg-offset-2 main">
+				<div class="row">
+					<ol class="breadcrumb">
+						<li><a href="/admin/dashboard"><svg class="glyph stroked home">
+									<use xlink:href="#stroked-home"></use>
+								</svg></a></li>
+						<li class="active"><a href="/admin/category">Quản lý danh mục</a></li>
+					</ol>
+				</div><!--/.row-->
+
+				<div class="row">
+					<div class="col-lg-12">
+						<h1 class="page-header">Quản lý danh mục</h1>
+					</div>
+				</div><!--/.row-->
+				<div id="toolbar" class="btn-group">
+					<a href="/admin/category/create" class="btn btn-success">
+						<i class="glyphicon glyphicon-plus"></i> Thêm danh mục
+					</a>
+				</div>
+				<div class="row">
+					<div class="col-md-12">
+						<div class="panel panel-default">
+							<div class="panel-body">
+								<table data-toolbar="#toolbar" data-toggle="table">
+
+									<thead>
+										<tr>
+											<th data-field="id" data-sortable="true">ID</th>
+											<th>Tên danh mục</th>
+											<th>Hành động</th>
+											<th>Chọn</th>
+										</tr>
+									</thead>
+									<tbody>
+										<% let idCounter=1;%>
+											<% for(let category of categories){ %>
+												<% if (!category.is_delete) { %>
+													<tr>
+														<td>
+															<%= idCounter++ %>
+														</td>
+														<td>
+															<%= category.title %>
+														</td>
+														<td class="form-group">
+															<a href="/admin/category/edit/<%= category._id %>"
+																class="btn btn-primary">
+																<i class="glyphicon glyphicon-pencil"></i>
+															</a>
+															<% if (!category.is_root) { %>
+																<a onclick="clickDelete('<%= category._id %>')"
+																	class="btn btn-danger">
+																	<i class="glyphicon glyphicon-remove"></i>
+																</a>
+																<% } %>
+														</td>
+														<td>
+															<input class="select-checkbox" style="cursor: pointer;"
+																name="idsPrd[]" type="checkbox"
+																value="<%= category._id %>" <%=category.is_root
+																? 'disabled' : '' %> />
+														</td>
+													</tr>
+													<% } %>
+														<% } %>
+
+									</tbody>
+								</table>
+								<div style="display: flex; justify-content: end; margin-top: 10px;">
+									<a onclick="clickDeleteChecked()" class="btn btn-danger"
+										style="margin-right: 5px;">Xóa các ô đã chọn</a>
+									<a onclick="selectAllCheckbox()" class="btn btn-warning">Chọn tất cả</a>
+								</div>
+							</div>
+							<div class="panel-footer">
+								<div id="toolbar" class="btn-group">
+									<a href="/admin/category/trash" class="btn btn-info">
+										<i class="glyphicon glyphicon-trash"></i> Danh mục đã xóa
+									</a>
+								</div>
+								<nav aria-label="Page navigation example">
+									<ul class="pagination">
+										<%if(page> 1){%>
+											<li class="page-item"><a class="page-link"
+													href="../../admin/category/?page=<%=page-1%>">&laquo;</a></li>
+											<%}%>
+												<%for(let item of pages){%>
+													<li class="page-item <%= item === page? 'active' : '' %>">
+														<%if(item==="..." ){%>
+															<span class="page-link">
+																<%=item%>
+															</span>
+															<%}else{%>
+																<a class="page-link"
+																	href="../../admin/category/?page=<%= item%>">
+																	<%=item%>
+																</a>
+																<%}%>
+													</li>
+													<%}%>
+														<%if(page < totalPages){%>
+															<li class="page-item"><a class="page-link"
+																	href="../../admin/category/?page=<%=page+1%>">&raquo;</a>
+															</li>
+															<%}%>
+									</ul>
+								</nav>
+							</div>
+						</div>
+
+					</div>
+				</div><!--/.row-->
+			</div> <!--/.main-->
+
+			<script src="js/jquery-1.11.1.min.js"></script>
+			<script src="js/bootstrap.min.js"></script>
+			<script src="js/bootstrap-table.js"></script>
+			<script>
+				function handleConfirm(id, action) {
+					const isConfirm = confirm(`Bạn có chắc chắn ${action} không?`)
+					const link = () => window.location.href = `/admin/category/${action}/${id}`
+					return isConfirm ? link() : false
+				}
+				const clickDelete = (id) => handleConfirm(id, 'delete')
+			</script>
+
+			<script>
+				function selectAllCheckbox() {
+					const allCheckbox = document.querySelectorAll('.select-checkbox')
+					allCheckbox.forEach(select => select.checked = !select.checked)
+				}
+			</script>
+
+			<script>
+				function handleChecked(action) {
+					const allCheckedbox = document.querySelectorAll('.select-checkbox:checked')
+					const arrIdsValue = Array.from(allCheckedbox).map(i => i.value)
+					const strIdsValue = arrIdsValue.join(',')
+					if (!strIdsValue) {
+						alert('Bạn chưa chọn ô nào!')
+						return false
+					} else {
+						const isConfirm = confirm(`Bạn có muốn ${action} các danh mục đã chọn không?`)
+						const link = () => window.location.href = `/admin/category/${action}/${strIdsValue}`
+						return isConfirm ? link() : false
+					}
+				}
+				const clickDeleteChecked = () => handleChecked('delete')
+			</script>
+			<%- include("../layout/footer.ejs")%>

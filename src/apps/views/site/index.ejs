@@ -1,0 +1,31 @@
+<%- include("layouts/head.ejs", {title:"Trang chủ"})%> 
+<%- include("layouts/header.ejs")%> 
+<%- include("layouts/menu.ejs")%>
+<%- include("layouts/slider.ejs")%> 
+
+<!--	Feature Product	-->
+                <div class="products">
+                    <h3>Sản phẩm nổi bật</h3>
+                    <div class="product-list card-deck">
+                        <%for(let item of featured){%>
+                            <%- include("./components/product_item.ejs",{item})%>
+                        <%}%>
+                    </div>
+                </div>
+                <!--	End Feature Product	-->
+                
+                
+                <!--	Latest Product	-->
+                <div class="products">
+                    <h3>Sản phẩm mới</h3>
+                    <div class="product-list card-deck">
+                            <%for(let item of lastest){%>
+                                <%- include("./components/product_item.ejs",{item})%>
+                            <%}%>
+                    </div>
+                </div>
+                <!--	End Latest Product	-->
+                
+            </div>
+<%- include("layouts/sidebar.ejs")%> 
+<%- include("layouts/footer.ejs")%>

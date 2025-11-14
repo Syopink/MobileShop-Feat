@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Huy Mobile Shop - Administrator</title>
+<base href="/static/admin/">
+<link href="css/bootstrap.min.css" rel="stylesheet">
+<link href="css/datepicker3.css" rel="stylesheet">
+<link href="css/bootstrap-table.css" rel="stylesheet">
+<link href="css/styles.css" rel="stylesheet">
+
+<!--[if lt IE 9]>
+<script src="js/html5shiv.js"></script>
+<script src="js/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+	
+	
+	<div class="row">
+		<div class="col-xs-10 col-xs-offset-1 col-sm-8 col-sm-offset-2 col-md-4 col-md-offset-4">
+			<div class="login-panel panel panel-default">
+				<div class="panel-heading">Huy Mobile Shop - Administrator</div>
+				<div class="panel-body">
+						<%if(data && data.error){%>
+								<div class="alert alert-danger">
+									<%=data.error%>
+								</div>
+						<%}%>
+					<form role="form" method="post" action="/admin/login">
+						<fieldset>
+							<div class="form-group">
+								<input required class="form-control" placeholder="E-mail" name="email" type="email" value="<%=cookie?.savedEmail%>" autofocus>
+							</div>
+							<div class="form-group">
+								<input required class="form-control" placeholder="Mật khẩu" name="password" type="password" value="<%=cookie?.savedPassword%>">
+							</div>
+							<div class="checkbox">
+								<label>
+									<input name="remember" type="checkbox" value="Remember Me">Nhớ tài khoản
+								</label>
+							</div>
+							<div class="login-passport">
+								<a onClick="googleClick()" class="btn">
+								  <img class="img-fluid" width="50px" height="50px" src="/static/admin/img/google.png" class="logo-icon" alt="google-icon" />
+								</a>
+								<a onClick="facebookClick()" class="btn">
+								  <img class="img-fluid" width="38px" height="36px" src="/static/admin/img/facebook.png" class="logo-icon" alt="facebook-icon" />
+								</a>
+							  </div>
+							  <button type="submit" class="btn btn-primary">Đăng nhập</button>
+							  <a href="/admin/register" class="btn btn-primary" >Đăng ký</a>
+						</fieldset>
+					</form>
+
+				</br>
+				<a  href="/admin/login/forgot" class="btn btn-primary">Quên mật khẩu</a>							
+				</div> 
+			</div>
+		</div><!-- /.col-->
+	</div><!-- /.row -->	
+</body>
+<script>
+	function handleClick(action){
+		const isConfirm = confirm(`Bạn có muốn đăng nhập với ${action} không?`)
+		return isConfirm ? window.location.href = `/admin/auth/${action}` : false
+	}
+	const googleClick = () => handleClick('google')
+	const facebookClick = () => handleClick('facebook')
+</script>
+</html>
