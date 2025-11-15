@@ -433,6 +433,11 @@ const order = async (req, res) => {
     }
 
     console.log("=== STEP 4: Gửi email & tạo đơn GHN ===");
+    const { province, district, ward } = await getGHNNameById(
+      provinceId,
+      districtId,
+      wardCode
+    );
 
     // Gửi email
     const html = await ejs.renderFile(
@@ -440,9 +445,9 @@ const order = async (req, res) => {
       {
         name,
         phone,
-        provinceId,
-        districtId,
-        wardCode,
+        province,
+        district,
+        ward,
         address,
         items: orderItems,
         totalPrice,
