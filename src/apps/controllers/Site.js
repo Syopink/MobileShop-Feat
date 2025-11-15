@@ -480,13 +480,19 @@ const order = async (req, res) => {
     );
     console.log("Email HTML rendered");
 
-    await transporter.sendMail({
-      from: '"VietPro Store 👻" <vietpro.store@gmail.com>',
-      to: email,
-      subject: "Xác nhận đơn hàng từ VietPro Store",
-      html,
-    });
-    console.log("✅ Email sent");
+    transporter
+      .sendMail({
+        from: '"VietPro Store 👻" <vietpro.store@gmail.com>',
+        to: email,
+        subject: "Xác nhận đơn hàng từ VietPro Store",
+        html,
+      })
+      .catch((err) => {
+        console.error("❌ Lỗi gửi email:", err.message);
+        // Không throw error - để tiếp tục xử lý
+      });
+
+    console.log("✅ Email đang được gửi (async)");
 
     const ghnResponse = await axios.post(
       "https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/create",
