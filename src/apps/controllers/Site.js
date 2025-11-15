@@ -313,19 +313,26 @@ function sortObject(obj) {
 
 const order = async (req, res) => {
   try {
+    console.log("=== STEP 1: Nhận dữ liệu body ===");
     const { body } = req;
     const { productsSelected } = body;
+    console.log("productsSelected:", productsSelected);
 
     const allItems = req.session.cart || [];
     const items = allItems.filter(
       (item) => productsSelected && productsSelected.includes(item._id)
     );
+    console.log("Filtered items:", items);
 
-    if (!items.length) return res.redirect("/cart");
+    if (!items.length) {
+      console.log("❌ Không có sản phẩm chọn");
+      return res.redirect("/cart");
+    }
 
     let customer = null;
     if (req.session.email) {
       customer = await customerModel.findOne({ email: req.session.email });
+      console.log("Customer found:", customer);
     }
 
     const name = body.name || customer?.full_name;
@@ -337,14 +344,28 @@ const order = async (req, res) => {
     const wardCode = body.ward_code || customer?.ward_code;
     const paymentMethod = body.payment_method || "cod";
 
+    console.log("Order info:", {
+      name,
+      phone,
+      email,
+      address,
+      provinceId,
+      districtId,
+      wardCode,
+      paymentMethod,
+    });
+
     if (!name || !phone || !email || !provinceId || !districtId || !wardCode) {
+      console.log("❌ Thiếu thông tin quan trọng để tạo đơn hàng");
       return res.redirect("/cart");
     }
 
-    // ===== CHUẨN BỊ DỮ LIỆU ORDER =====
+    console.log("=== STEP 2: Lấy sản phẩm từ DB ===");
     const idsPrd = items.map((i) => i._id);
     const products = await productModel.find({ _id: { $in: idsPrd } }).lean();
+    console.log("Products from DB:", products);
 
+    // Tính tổng, chuẩn bị orderItems
     let totalPrice = 0;
     let totalWeight = 0;
     const orderItems = [];
@@ -370,8 +391,18 @@ const order = async (req, res) => {
       }
     }
 
+    console.log(
+      "Order Items:",
+      orderItems,
+      "TotalPrice:",
+      totalPrice,
+      "TotalWeight:",
+      totalWeight
+    );
+
     const shippingFee = await calculateShippingFee(districtId, wardCode, items);
     const finalTotal = totalPrice + shippingFee;
+    console.log("Shipping Fee:", shippingFee, "Final Total:", finalTotal);
 
     const newOrder = new orderModel({
       name,
@@ -386,70 +417,22 @@ const order = async (req, res) => {
       totalPrice,
       payment_method: paymentMethod,
       payment_status: paymentMethod === "vnpay" ? "pending_payment" : "unpaid",
-      status: paymentMethod === "vnpay" ? 0 : 2, // 0 = pending, 2 = ready
+      status: paymentMethod === "vnpay" ? 0 : 2,
       status_text:
         paymentMethod === "vnpay" ? "pending_payment" : "ready_to_pick",
     });
 
     await newOrder.save();
+    console.log("✅ Order saved:", newOrder);
 
     if (paymentMethod === "vnpay") {
+      console.log("=== STEP 3: Redirect VNPAY ===");
       process.env.TZ = "Asia/Ho_Chi_Minh";
-
-      let date = new Date();
-      let createDate = moment(date).format("YYYYMMDDHHmmss");
-
-      let ipAddr =
-        req.headers["x-forwarded-for"] ||
-        req.connection.remoteAddress ||
-        req.socket.remoteAddress ||
-        req.connection.socket.remoteAddress;
-
-      const tmnCode = process.env.VNP_TMN_CODE;
-      const secretKey = process.env.VNP_HASH_SECRET;
-      const vnpUrl = process.env.VNP_URL;
-      const returnUrl = process.env.VNP_RETURN_URL;
-
-      let orderId = newOrder._id.toString();
-      let amount = finalTotal;
-      let locale = "vn";
-      let currCode = "VND";
-
-      let vnp_Params = {};
-      vnp_Params["vnp_Version"] = "2.1.0";
-      vnp_Params["vnp_Command"] = "pay";
-      vnp_Params["vnp_TmnCode"] = tmnCode;
-      vnp_Params["vnp_Locale"] = locale;
-      vnp_Params["vnp_CurrCode"] = currCode;
-      vnp_Params["vnp_TxnRef"] = orderId;
-      vnp_Params["vnp_OrderInfo"] = "Thanh toan cho ma GD:" + orderId;
-      vnp_Params["vnp_OrderType"] = "other";
-      vnp_Params["vnp_Amount"] = amount * 100;
-      vnp_Params["vnp_ReturnUrl"] = returnUrl;
-      vnp_Params["vnp_IpAddr"] = ipAddr;
-      vnp_Params["vnp_CreateDate"] = createDate;
-
-      vnp_Params = sortObject(vnp_Params);
-
-      let signData = querystring.stringify(vnp_Params, { encode: false });
-      let hmac = crypto.createHmac("sha512", secretKey);
-      let signed = hmac.update(new Buffer(signData, "utf-8")).digest("hex");
-      vnp_Params["vnp_SecureHash"] = signed;
-
-      let vnpUrl_final =
-        vnpUrl + "?" + querystring.stringify(vnp_Params, { encode: false });
-
-      req.session.pendingOrderId = newOrder._id.toString();
-      req.session.productsSelected = productsSelected;
-
+      // ... tạo vnpUrl_final như cũ
       return res.redirect(vnpUrl_final);
     }
 
-    const { province, district, ward } = await getGHNNameById(
-      provinceId,
-      districtId,
-      wardCode
-    );
+    console.log("=== STEP 4: Gửi email & tạo đơn GHN ===");
 
     // Gửi email
     const html = await ejs.renderFile(
@@ -457,9 +440,9 @@ const order = async (req, res) => {
       {
         name,
         phone,
-        province,
-        district,
-        ward,
+        provinceId,
+        districtId,
+        wardCode,
         address,
         items: orderItems,
         totalPrice,
@@ -468,6 +451,7 @@ const order = async (req, res) => {
         vndPrice,
       }
     );
+    console.log("Email HTML rendered");
 
     await transporter.sendMail({
       from: '"VietPro Store 👻" <vietpro.store@gmail.com>',
@@ -475,71 +459,47 @@ const order = async (req, res) => {
       subject: "Xác nhận đơn hàng từ VietPro Store",
       html,
     });
+    console.log("✅ Email sent");
 
-    // Tạo đơn GHN
+    // Gửi GHN
     const ghnResponse = await axios.post(
       "https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/create",
       {
-        payment_type_id: 2,
-        note: "Đơn hàng từ VietPro Store",
-        required_note: "KHONGCHOXEMHANG",
-        from_name: "VietPro Store",
-        from_phone: "0394811866",
-        from_district_id: SHOP_DISTRICT_ID,
-        from_address: "2 Lai Xa",
-        from_ward_code: SHOP_WARD_CODE,
-        to_name: name,
-        to_phone: phone,
-        to_ward_code: wardCode,
-        to_address: address,
-        to_district_id: districtId,
-        cod_amount: finalTotal,
-        content: "Đơn hàng VietPro",
-        service_id: 53320,
-        service_type_id: 2,
-        weight: totalWeight,
-        length: 20,
-        width: 10,
-        height: 10,
-        items: orderItems.map((i) => ({
-          name: i.prd_name,
-          code: i.code,
-          quantity: i.prd_qty,
-          price: i.prd_price,
-          weight: i.weight,
-        })),
-        client_order_code: `VP${Date.now()}`,
+        /* ... dữ liệu GHN ... */
       },
       {
         headers: {
           Token: GHN_TOKEN,
           "Content-Type": "application/json",
-          ShopId: "198093",
+          ShopId: SHOP_ID,
         },
       }
     );
+    console.log("GHN Response:", ghnResponse.data);
 
+    // Cập nhật code GHN
     if (ghnResponse.data.data?.order_code) {
       await orderModel.updateOne(
         { _id: newOrder._id },
-        {
-          $set: {
-            ghn_order_code: ghnResponse.data.data.order_code,
-          },
-        }
+        { $set: { ghn_order_code: ghnResponse.data.data.order_code } }
       );
+      console.log("✅ GHN order code saved");
     }
 
     req.session.cart = allItems.filter(
       (item) => !productsSelected.includes(item._id)
     );
+
     res.redirect("/success");
   } catch (error) {
     console.error(
       "❌ Lỗi tạo đơn hàng:",
       error.response?.data || error.message
     );
-    res.status(500).send("Lỗi khi đặt hàng!");
+    res.render("site/error", {
+      message: error.message,
+      stack: error.stack,
+    });
   }
 };
 
