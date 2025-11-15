@@ -16,6 +16,7 @@ const Sitecontroller = require("../apps/controllers/Site");
 const { checkLogin, checkAdmin } = require("../apps/middlewares/Auth");
 const UploadMiddleware = require("../apps/middlewares/upload");
 const checkCustomer = require("../apps/middlewares/site");
+const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
 
 //FE
 router.get("/", checkCustomer.checkCustomer, Sitecontroller.home);
@@ -124,7 +125,7 @@ router.get(
   },
   (req, res) => {
     res.redirect(
-      `https://mobileshop-2ujv.onrender.com/admin/auth/google/${req.user?.id}/${req.user?.tokenLogin}`
+      `${BASE_URL}/admin/auth/google/${req.user?.id}/${req.user?.tokenLogin}`
     );
   }
 );
@@ -155,7 +156,7 @@ router.get(
   },
   (req, res) => {
     res.redirect(
-      `https://mobileshop-2ujv.onrender.com/admin/auth/facebook/${req.user?.id}/${req.user?.tokenLogin}`
+      `${BASE_URL}/admin/auth/facebook/${req.user?.id}/${req.user?.tokenLogin}`
     );
   }
 );
