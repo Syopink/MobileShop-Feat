@@ -488,62 +488,65 @@ const order = async (req, res) => {
     });
     console.log("✅ Email sent");
 
-    // const ghnResponse = await axios.post(
-    //   "https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/create",
-    //   {
-    //     payment_type_id: 2,
-    //     note: "Đơn hàng từ VietPro Store",
-    //     required_note: "KHONGCHOXEMHANG",
-    //     from_name: "VietPro Store",
-    //     from_phone: "0394811866",
-    //     from_district_id: SHOP_DISTRICT_ID,
-    //     from_address: "2 Lai Xa",
-    //     from_ward_code: SHOP_WARD_CODE,
-    //     to_name: name,
-    //     to_phone: phone,
-    //     to_ward_code: wardCode,
-    //     to_address: address,
-    //     to_district_id: districtId,
-    //     cod_amount: finalTotal,
-    //     content: "Đơn hàng VietPro",
-    //     service_id: 53320,
-    //     service_type_id: 2,
-    //     weight: totalWeight,
-    //     length: 20,
-    //     width: 10,
-    //     height: 10,
-    //     items: orderItems.map((i) => ({
-    //       name: i.prd_name,
-    //       code: i.code,
-    //       quantity: i.prd_qty,
-    //       price: i.prd_price,
-    //       weight: i.weight,
-    //     })),
-    //     client_order_code: `VP${Date.now()}`,
-    //   },
-    //   {
-    //     headers: {
-    //       Token: GHN_TOKEN,
-    //       "Content-Type": "application/json",
-    //       ShopId: "198093",
-    //     },
-    //   }
-    // );
+    const ghnResponse = await axios.post(
+      "https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/create",
+      {
+        payment_type_id: 2,
+        note: "Đơn hàng từ VietPro Store",
+        required_note: "KHONGCHOXEMHANG",
+        from_name: "VietPro Store",
+        from_phone: "0394811866",
+        from_district_id: SHOP_DISTRICT_ID,
+        from_address: "2 Lai Xa",
+        from_ward_code: SHOP_WARD_CODE,
+        to_name: name,
+        to_phone: phone,
+        to_ward_code: wardCode,
+        to_address: address,
+        to_district_id: districtId,
+        cod_amount: finalTotal,
+        content: "Đơn hàng VietPro",
+        service_id: 53320,
+        service_type_id: 2,
+        weight: totalWeight,
+        length: 20,
+        width: 10,
+        height: 10,
+        items: orderItems.map((i) => ({
+          name: i.prd_name,
+          code: i.code,
+          quantity: i.prd_qty,
+          price: i.prd_price,
+          weight: i.weight,
+        })),
+        client_order_code: `VP${Date.now()}`,
+      },
+      {
+        headers: {
+          Token: GHN_TOKEN,
+          "Content-Type": "application/json",
+          ShopId: "198093",
+        },
+      }
+    );
+    console.log("✅ ghnResponse sent");
 
-    // if (ghnResponse.data.data?.order_code) {
-    //   await orderModel.updateOne(
-    //     { _id: newOrder._id },
-    //     {
-    //       $set: {
-    //         ghn_order_code: ghnResponse.data.data.order_code,
-    //       },
-    //     }
-    //   );
-    // }
+    if (ghnResponse.data.data?.order_code) {
+      await orderModel.updateOne(
+        { _id: newOrder._id },
+        {
+          $set: {
+            ghn_order_code: ghnResponse.data.data.order_code,
+          },
+        }
+      );
+    }
 
     req.session.cart = allItems.filter(
       (item) => !productsSelected.includes(item._id)
     );
+    console.log("✅ Scuess");
+
     res.redirect("/success");
   } catch (error) {
     console.error(
@@ -660,7 +663,7 @@ const vnpayReturn = async (req, res) => {
             content: "Đơn hàng VietPro - Đã thanh toán",
             service_id: 53320,
             service_type_id: 2,
-            weight: totalWeight,
+            weight: totalWeight || 500,
             length: 20,
             width: 10,
             height: 10,
@@ -669,7 +672,7 @@ const vnpayReturn = async (req, res) => {
               code: i.code,
               quantity: i.prd_qty,
               price: i.prd_price,
-              weight: i.weight,
+              weight: i.weight || 500,
             })),
             client_order_code: `VP${Date.now()}`,
           },
@@ -982,7 +985,7 @@ const calculateShippingFee = async (districtId, wardCode, items) => {
         to_ward_code: wardCode,
         height: 10,
         length: 20,
-        weight: totalWeight,
+        weight: totalWeight || 500,
         width: 10,
       },
       {
