@@ -636,7 +636,7 @@ const vnpayReturn = async (req, res) => {
           }
         );
 
-        await transporter.sendMail({
+        transporter.sendMail({
           from: '"VietPro Store 👻" <vietpro.store@gmail.com>',
           to: order.email,
           subject: "Xác nhận đơn hàng từ VietPro Store (Đã thanh toán VNPay)",
