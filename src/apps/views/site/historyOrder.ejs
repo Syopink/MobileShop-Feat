@@ -31,6 +31,30 @@ include("layouts/slider.ejs") %>
     font-weight: bold;
     margin-left: 10px;
   }
+  .payment-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 10px;
+  }
+  .payment-paid {
+    background-color: #28a745;
+    color: white;
+  }
+  .payment-unpaid {
+    background-color: #ffc107;
+    color: #000;
+  }
+  .payment-pending {
+    background-color: #17a2b8;
+    color: white;
+  }
+  .btn-pay-now {
+    margin-left: 10px;
+    font-size: 12px;
+  }
 </style>
 
 <% if (email) { %>
@@ -47,56 +71,91 @@ include("layouts/slider.ejs") %>
       </tr>
     </thead>
     <tbody>
-      <% for (let order of orders) { let totalAmount
-      = 0; for (let item of order.items) { totalAmount += item.prd_price *
-      item.prd_qty; } order.total_amount = totalAmount; } let index = 1; let
-      count = 1; let countProduct = 1; %> <% for (let order of orders) { %>
+      <% for (let order of orders) { let totalAmount = 0; for (let item of
+      order.items) { totalAmount += item.prd_price * item.prd_qty; }
+      order.total_amount = totalAmount; } let index = 1; let count = 1;%> <% for (let order of orders) { let
+      countProduct = 1;  %>
       <!-- Hàng tiêu đề đơn hàng -->
       <tr style="background-color: #f9f9f9">
         <td><b><%= index++ %></b></td>
         <td colspan="5">
           <b>Đơn hàng thứ <%= count++ %></b> —
-          <span style="color: red">Mã: <%= order.ghn_order_code %></span> —
-          <b>Tổng tiền: <%= vndPrice(order.total_amount) %></b>
+          <span style="color: red"
+            >Mã: <%= order.ghn_order_code || 'Chưa có' %></span
+          >
+          —
+          <b
+            >Tổng tiền: <%= vndPrice(order.total_amount + order.shippingFee)
+            %></b
+          >
 
-         <% if (order.status === 0 || order.status_text === 'cancel') { %>
-  <span class="status-label" style="color: gray">Đã hủy</span>
-<% } else if (['ready_to_pick', 'picking', 'delivering'].includes(order.status_text)) { %>
-  <span class="status-label" style="color: green">
-    <% if (order.status_text === 'ready_to_pick') { %>Chờ lấy hàng<% } %>
-    <% if (order.status_text === 'picking') { %>Đang lấy hàng<% } %>
-    <% if (order.status_text === 'delivering') { %>Đang giao hàng<% } %>
-  </span>
+          <% if (order.payment_method === 'vnpay') { %> <% if
+          (order.payment_status === 'paid') { %>
+          <span class="payment-badge payment-paid">Đã thanh toán</span>
+          <% } else if (order.payment_status === 'pending_payment') { %>
+          <span class="payment-badge payment-pending"
+            >⏳ Chờ thanh toán VNPay</span
+          >
+          <% } else { %>
+          <span class="payment-badge payment-unpaid"
+            >❌ Chưa thanh toán VNPay</span
+          >
+          <% } %> <% } else { %>
+          <span class="payment-badge payment-unpaid">💵 COD </span>
+          <% } %>
 
-  <% if (order.status_text === 'ready_to_pick') { %>
-  <form
-    action="/order/<%= order._id %>/cancel"
-    method="POST"
-    onsubmit="return confirm('Bạn có chắc muốn hủy đơn hàng này không?');"
-    style="display: inline; margin-left: 10px"
-  >
-    <button type="submit" class="btn btn-danger btn-sm">
-      Hủy đơn hàng
-    </button>
-  </form>
-  <% } %>
+          <!-- ✅ HIỂN THỊ TRẠNG THÁI ĐƠN HÀNG -->
+          <% if (order.status === 0 || order.status_text === 'cancel' ||
+          order.status_text === 'payment_failed') { %>
+          <span class="status-label" style="color: gray">
+            <% if (order.status_text === 'payment_failed') { %> ❌ Thanh toán
+            thất bại <% } else { %> 🚫 Đã hủy <% } %>
+          </span>
 
-<% } else if (order.status_text === 'delivered') { %>
-  <span class="status-label" style="color: blue">Đã giao thành công</span>
-<% } else { %>
-  <span class="status-label" style="color: orange">Đang xử lý</span>
-  <form
-    action="/order/<%= order._id %>/cancel"
-    method="POST"
-    onsubmit="return confirm('Bạn có chắc muốn hủy đơn hàng này không?');"
-    style="display: inline; margin-left: 10px"
-  >
-    <button type="submit" class="btn btn-danger btn-sm">
-      Hủy đơn hàng
-    </button>
-  </form>
+          <% } else if (['ready_to_pick', 'picking',
+          'delivering'].includes(order.status_text)) { %>
+          <span class="status-label" style="color: green">
+            <% if (order.status_text === 'ready_to_pick') { %>📦 Chờ lấy hàng<%
+            } %> <% if (order.status_text === 'picking') { %>🚚 Đang lấy hàng<%
+            } %> <% if (order.status_text === 'delivering') { %>🚛 Đang giao
+            hàng<% } %>
+          </span>
+
+          <!-- Nút hủy cho đơn chờ lấy -->
+          <% if (order.status_text === 'ready_to_pick') { %>
+          <form
+            action="/order/<%= order._id %>/cancel"
+            method="POST"
+            onsubmit="return confirm('Bạn có chắc muốn hủy đơn hàng này không?');"
+            style="display: inline; margin-left: 10px"
+          >
+            <button type="submit" class="btn btn-danger btn-sm">
+              Hủy đơn hàng
+            </button>
+          </form>
+          <% } %> <% } else if (order.status_text === 'delivered') { %>
+          <span class="status-label" style="color: blue"
+            >Đã giao thành công</span
+          >
+
+          <% } else if (order.status_text === 'pending_payment') { %>
+          <span class="status-label" style="color: orange">Chờ thanh toán</span>
+
+          <% } else { %>
+          <span class="status-label" style="color: orange">Đang xử lý</span>
+          <% } %> <% if (
+  order.payment_method === 'vnpay' &&
+  ['pending_payment', 'unpaid', 'payment_failed'].includes(order.payment_status) &&
+  order.status_text !== 'cancel'
+) { %>
+<a
+  href="/order/<%= order._id %>/retry-payment"
+  class="btn btn-primary btn-sm btn-pay-now"
+  onclick="return confirm('Bạn muốn thanh toán đơn hàng này?');"
+>
+  Thanh toán lại
+</a>
 <% } %>
-
         </td>
       </tr>
 

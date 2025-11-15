@@ -372,5 +372,6 @@ router.post("/api/calculate-shipping", Sitecontroller.calculateShippingAPI);
 router.get("/chat", (req, res) => {
   res.render("chat");
 });
+router.get("/order/:id/retry-payment", Sitecontroller.retryVNPayPayment);
 
 module.exports = router;

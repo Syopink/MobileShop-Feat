@@ -13,7 +13,7 @@ module.exports = {
     host: "smtp.gmail.com",
     port: 587,
     secure: false,
-    user: process.env.MAIL_USER,
-    pass: process.env.MAIL_PASS,
+    user: process.env.MAIL_USER || "huybackduong@gmail.com",
+    pass: process.env.MAIL_PASS || "plrx gsuv vsko dsnn",
   },
 };

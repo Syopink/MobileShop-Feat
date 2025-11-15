@@ -20,15 +20,15 @@ const orderSchema = new mongoose.Schema(
     },
     provinceId: {
       type: Number,
-      required: true, // GHN yêu cầu có mã tỉnh
+      required: true,
     },
     districtId: {
       type: Number,
-      required: true, // GHN yêu cầu có mã quận/huyện
+      required: true,
     },
     wardCode: {
       type: String,
-      required: true, // GHN yêu cầu có mã phường/xã
+      required: true,
     },
     items: [
       {
@@ -53,11 +53,18 @@ const orderSchema = new mongoose.Schema(
           type: Number,
           required: true,
         },
+        weight: {
+          type: Number,
+          default: 500,
+        },
+        code: {
+          type: String,
+        },
       },
     ],
     shippingFee: {
       type: Number,
-      default: 0, // phí ship (tính từ GHN)
+      default: 0,
     },
     totalPrice: {
       type: Number,
@@ -73,6 +80,29 @@ const orderSchema = new mongoose.Schema(
     },
     status_text: {
       type: String,
+      enum: [
+        "pending_payment",
+        "ready_to_pick",
+        "pending_retry",
+        "picking",
+        "delivering",
+        "delivered",
+        "cancel",
+        "paid",
+        "payment_failed",
+        "picking",
+        "storing",
+        "transporting",
+        "sorting",
+        "delivery_fail",
+        "waiting_to_return",
+        "return",
+        "return_transporting",
+        "returned",
+        "lost",
+        "damage",
+        "exception",
+      ],
       default: "ready_to_pick",
     },
     status_history: [
@@ -84,7 +114,6 @@ const orderSchema = new mongoose.Schema(
         },
       },
     ],
-    // ✅ Thêm các trường thanh toán
     payment_method: {
       type: String,
       enum: ["cod", "vnpay"],
@@ -93,11 +122,10 @@ const orderSchema = new mongoose.Schema(
     },
     payment_status: {
       type: String,
-      enum: ["unpaid", "paid"],
+      enum: ["unpaid", "paid", "pending_payment", "failed"],
       default: "unpaid",
       required: true,
     },
-    // ✅ Thông tin giao dịch VNPay (nếu có)
     vnpay_txn_ref: {
       type: String,
       default: null,
@@ -110,6 +138,16 @@ const orderSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    vnpay_retry_txn_ref: {
+      type: String,
+      default: null,
+    },
+    vnpay_retries: [
+      {
+        txn_ref: String,
+        created_at: { type: Date, default: Date.now },
+      },
+    ],
   },
   { timestamps: true }
 );

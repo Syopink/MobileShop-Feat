@@ -36,7 +36,7 @@
 
                             <% if(product.is_stock){%>
                                 <form method="post" action="/add-to-cart">
-                                    <input type="hidden" name="id" value="<%=product.id%>">
+<input type="hidden" name="id" value="<%= product._id %>">
                                     <div class="form-row align-items-center">
                                         <div class="col-sm-3 my-1">
                                             <div class="input-group">

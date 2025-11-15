@@ -7,7 +7,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "https://mobileshop-2ujv.onrender.com",
+    origin: "*",
     methods: ["GET", "POST"],
   },
 });

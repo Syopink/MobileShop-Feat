@@ -278,6 +278,24 @@
     font-size: 13px;
     margin-left: 40px;
   }
+
+  .bubble form {
+    margin-top: 6px;
+  }
+
+  .bubble form button {
+    padding: 6px 10px;
+    background: #007bff;
+    color: #fff;
+    border-radius: 4px;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .bubble form button:hover {
+    background: #0056b3;
+  }
 </style>
 
 <!-- ======= JS ======= -->
@@ -380,10 +398,10 @@
         body: JSON.stringify({ message }),
       });
       const data = await res.json();
-      typingElem.querySelector(".bubble").innerText = data.reply;
+      typingElem.querySelector(".bubble").innerHTML = data.reply;
       typingElem.classList.remove("typing");
     } catch (e) {
-      typingElem.querySelector(".bubble").innerText =
+      typingElem.querySelector(".bubble").innerHTML =
         "Xin lỗi, hệ thống đang bận.";
       console.error(e);
     }
@@ -402,7 +420,7 @@
 
     const bubble = document.createElement("div");
     bubble.className = "bubble";
-    bubble.innerText = text;
+    bubble.innerHTML = text;
 
     if (sender === "bot") msg.appendChild(avatar);
     msg.appendChild(bubble);

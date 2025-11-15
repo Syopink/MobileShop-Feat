@@ -295,7 +295,6 @@ const deleteItemCart = (req, res) => {
 };
 const querystring = require("qs");
 
-// ✅ Hàm sortObject theo code gốc VNPay
 function sortObject(obj) {
   let sorted = {};
   let str = [];
@@ -318,7 +317,6 @@ const order = async (req, res) => {
     const { productsSelected } = body;
 
     const allItems = req.session.cart || [];
-
     const items = allItems.filter(
       (item) => productsSelected && productsSelected.includes(item._id)
     );
@@ -343,106 +341,7 @@ const order = async (req, res) => {
       return res.redirect("/cart");
     }
 
-    if (paymentMethod === "vnpay") {
-      process.env.TZ = "Asia/Ho_Chi_Minh";
-
-      const idsPrd = items.map((i) => i._id);
-      const products = await productModel.find({ _id: { $in: idsPrd } }).lean();
-
-      let totalPrice = 0;
-      let totalWeight = 0;
-      const orderItems = [];
-
-      for (let prd of products) {
-        const cart = items.find((i) => i._id === prd._id.toString());
-        if (cart) {
-          const subTotal = prd.price * cart.qty;
-          totalPrice += subTotal;
-
-          const weight = prd.weight || 500;
-          totalWeight += weight * cart.qty;
-
-          orderItems.push({
-            prd_id: prd._id,
-            prd_name: prd.name,
-            prd_price: prd.price,
-            prd_qty: cart.qty,
-            prd_thumbnail: prd.thumbnail,
-            weight,
-            code: prd._id.toString(),
-          });
-        }
-      }
-
-      const shippingFee = await calculateShippingFee(
-        districtId,
-        wardCode,
-        items
-      );
-      const finalTotal = totalPrice + shippingFee;
-
-      req.session.pendingOrder = {
-        name,
-        phone,
-        email,
-        provinceId,
-        districtId,
-        wardCode,
-        address,
-        orderItems,
-        totalPrice,
-        shippingFee,
-        finalTotal,
-        totalWeight,
-        productsSelected,
-      };
-
-      let date = new Date();
-      let createDate = moment(date).format("YYYYMMDDHHmmss");
-
-      let ipAddr =
-        req.headers["x-forwarded-for"] ||
-        req.connection.remoteAddress ||
-        req.socket.remoteAddress ||
-        req.connection.socket.remoteAddress;
-
-      const tmnCode = process.env.VNP_TMN_CODE;
-      const secretKey = process.env.VNP_HASH_SECRET;
-      const vnpUrl = process.env.VNP_URL;
-      const returnUrl = process.env.VNP_RETURN_URL;
-
-      let orderId = moment(date).format("DDHHmmss");
-      let amount = finalTotal;
-      let locale = "vn";
-      let currCode = "VND";
-
-      let vnp_Params = {};
-      vnp_Params["vnp_Version"] = "2.1.0";
-      vnp_Params["vnp_Command"] = "pay";
-      vnp_Params["vnp_TmnCode"] = tmnCode;
-      vnp_Params["vnp_Locale"] = locale;
-      vnp_Params["vnp_CurrCode"] = currCode;
-      vnp_Params["vnp_TxnRef"] = orderId;
-      vnp_Params["vnp_OrderInfo"] = "Thanh toan cho ma GD:" + orderId;
-      vnp_Params["vnp_OrderType"] = "other";
-      vnp_Params["vnp_Amount"] = amount * 100;
-      vnp_Params["vnp_ReturnUrl"] = returnUrl;
-      vnp_Params["vnp_IpAddr"] = ipAddr;
-      vnp_Params["vnp_CreateDate"] = createDate;
-
-      vnp_Params = sortObject(vnp_Params);
-
-      let signData = querystring.stringify(vnp_Params, { encode: false });
-      let hmac = crypto.createHmac("sha512", secretKey);
-      let signed = hmac.update(new Buffer(signData, "utf-8")).digest("hex");
-      vnp_Params["vnp_SecureHash"] = signed;
-
-      let vnpUrl_final =
-        vnpUrl + "?" + querystring.stringify(vnp_Params, { encode: false });
-
-      return res.redirect(vnpUrl_final);
-    }
-
+    // ===== CHUẨN BỊ DỮ LIỆU ORDER =====
     const idsPrd = items.map((i) => i._id);
     const products = await productModel.find({ _id: { $in: idsPrd } }).lean();
 
@@ -485,10 +384,66 @@ const order = async (req, res) => {
       items: orderItems,
       shippingFee,
       totalPrice,
-      status: 2,
-      payment_method: "cod",
-      payment_status: "unpaid",
+      payment_method: paymentMethod,
+      payment_status: paymentMethod === "vnpay" ? "pending_payment" : "unpaid",
+      status: paymentMethod === "vnpay" ? 0 : 2, // 0 = pending, 2 = ready
+      status_text:
+        paymentMethod === "vnpay" ? "pending_payment" : "ready_to_pick",
     });
+
+    await newOrder.save();
+
+    if (paymentMethod === "vnpay") {
+      process.env.TZ = "Asia/Ho_Chi_Minh";
+
+      let date = new Date();
+      let createDate = moment(date).format("YYYYMMDDHHmmss");
+
+      let ipAddr =
+        req.headers["x-forwarded-for"] ||
+        req.connection.remoteAddress ||
+        req.socket.remoteAddress ||
+        req.connection.socket.remoteAddress;
+
+      const tmnCode = process.env.VNP_TMN_CODE;
+      const secretKey = process.env.VNP_HASH_SECRET;
+      const vnpUrl = process.env.VNP_URL;
+      const returnUrl = process.env.VNP_RETURN_URL;
+
+      let orderId = newOrder._id.toString();
+      let amount = finalTotal;
+      let locale = "vn";
+      let currCode = "VND";
+
+      let vnp_Params = {};
+      vnp_Params["vnp_Version"] = "2.1.0";
+      vnp_Params["vnp_Command"] = "pay";
+      vnp_Params["vnp_TmnCode"] = tmnCode;
+      vnp_Params["vnp_Locale"] = locale;
+      vnp_Params["vnp_CurrCode"] = currCode;
+      vnp_Params["vnp_TxnRef"] = orderId;
+      vnp_Params["vnp_OrderInfo"] = "Thanh toan cho ma GD:" + orderId;
+      vnp_Params["vnp_OrderType"] = "other";
+      vnp_Params["vnp_Amount"] = amount * 100;
+      vnp_Params["vnp_ReturnUrl"] = returnUrl;
+      vnp_Params["vnp_IpAddr"] = ipAddr;
+      vnp_Params["vnp_CreateDate"] = createDate;
+
+      vnp_Params = sortObject(vnp_Params);
+
+      let signData = querystring.stringify(vnp_Params, { encode: false });
+      let hmac = crypto.createHmac("sha512", secretKey);
+      let signed = hmac.update(new Buffer(signData, "utf-8")).digest("hex");
+      vnp_Params["vnp_SecureHash"] = signed;
+
+      let vnpUrl_final =
+        vnpUrl + "?" + querystring.stringify(vnp_Params, { encode: false });
+
+      req.session.pendingOrderId = newOrder._id.toString();
+      req.session.productsSelected = productsSelected;
+
+      return res.redirect(vnpUrl_final);
+    }
 
     const { province, district, ward } = await getGHNNameById(
       provinceId,
@@ -496,6 +451,7 @@ const order = async (req, res) => {
       wardCode
     );
 
+    // Gửi email
     const html = await ejs.renderFile(
       path.join(req.app.get("views"), "site/email-order.ejs"),
       {
@@ -520,8 +476,7 @@ const order = async (req, res) => {
       html,
     });
 
-    await newOrder.save();
-
+    // Tạo đơn GHN
     const ghnResponse = await axios.post(
       "https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/create",
       {
@@ -570,13 +525,6 @@ const order = async (req, res) => {
         {
           $set: {
             ghn_order_code: ghnResponse.data.data.order_code,
-            status_text: "ready_to_pick",
-          },
-          $push: {
-            status_history: {
-              status: "ready_to_pick",
-              updatedAt: new Date(),
-            },
           },
         }
       );
@@ -612,81 +560,74 @@ const vnpayReturn = async (req, res) => {
 
     if (secureHash === signed) {
       let rspCode = vnp_Params["vnp_ResponseCode"];
+      let txnRef = vnp_Params["vnp_TxnRef"]; // Đổi tên biến cho rõ ràng
+
+      let order;
+      const mongoose = require("mongoose");
+
+      if (mongoose.Types.ObjectId.isValid(txnRef) && txnRef.length === 24) {
+        order = await orderModel.findById(txnRef);
+      } else {
+        order = await orderModel.findOne({
+          $or: [
+            { vnpay_retry_txn_ref: txnRef },
+            { "vnpay_retries.txn_ref": txnRef },
+          ],
+        });
+      }
+
+      if (!order) {
+        return res.send("<h1>❌ Không tìm thấy đơn hàng!</h1>");
+      }
 
       if (rspCode === "00") {
-        const pendingOrder = req.session.pendingOrder;
+        await orderModel.updateOne(
+          { _id: order._id }, // ← Sửa đây
+          {
+            $set: {
+              status: 1,
+              status_text: "paid",
+              payment_status: "paid",
+            },
+          }
+        );
 
-        if (!pendingOrder) {
-          return res.send("<h1>❌ Không tìm thấy thông tin đơn hàng!</h1>");
-        }
-
-        const {
-          name,
-          phone,
-          email,
-          provinceId,
-          districtId,
-          wardCode,
-          address,
-          orderItems,
-          totalPrice,
-          shippingFee,
-          finalTotal,
-          totalWeight,
-          productsSelected,
-        } = pendingOrder;
-
-        const newOrder = new orderModel({
-          name,
-          phone,
-          email,
-          provinceId,
-          districtId,
-          wardCode,
-          address,
-          items: orderItems,
-          shippingFee,
-          totalPrice,
-          status: 1,
-          payment_method: "vnpay",
-          payment_status: "paid",
-          vnpay_txn_ref: vnp_Params["vnp_TxnRef"],
-          vnpay_transaction_no: vnp_Params["vnp_TransactionNo"],
-          vnpay_paid_at: new Date(),
-          status_text: "paid",
-        });
-
+        // Gửi email xác nhận
         const { province, district, ward } = await getGHNNameById(
-          provinceId,
-          districtId,
-          wardCode
+          order.provinceId,
+          order.districtId,
+          order.wardCode
         );
 
         const html = await ejs.renderFile(
           path.join(req.app.get("views"), "site/email-order.ejs"),
           {
-            name,
-            phone,
+            name: order.name,
+            phone: order.phone,
             province,
             district,
             ward,
-            address,
-            items: orderItems,
-            totalPrice,
-            shippingFee,
-            finalTotal,
+            address: order.address,
+            items: order.items,
+            totalPrice: order.totalPrice,
+            shippingFee: order.shippingFee,
+            finalTotal: order.totalPrice + order.shippingFee,
             vndPrice,
           }
         );
 
         await transporter.sendMail({
           from: '"VietPro Store 👻" <vietpro.store@gmail.com>',
-          to: email,
+          to: order.email,
           subject: "Xác nhận đơn hàng từ VietPro Store (Đã thanh toán VNPay)",
           html,
         });
 
-        await newOrder.save();
+        // Tạo đơn GHN
+        const totalWeight = order.items.reduce(
+          (sum, item) => sum + (item.weight || 500) * item.prd_qty,
+          0
+        );
 
         const ghnResponse = await axios.post(
           "https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/create",
@@ -699,11 +640,11 @@ const vnpayReturn = async (req, res) => {
             from_district_id: SHOP_DISTRICT_ID,
             from_address: "2 Lai Xa",
             from_ward_code: SHOP_WARD_CODE,
-            to_name: name,
-            to_phone: phone,
-            to_ward_code: wardCode,
-            to_address: address,
-            to_district_id: districtId,
+            to_name: order.name,
+            to_phone: order.phone,
+            to_ward_code: order.wardCode,
+            to_address: order.address,
+            to_district_id: order.districtId,
             cod_amount: 0,
             content: "Đơn hàng VietPro - Đã thanh toán",
             service_id: 53320,
@@ -712,7 +653,7 @@ const vnpayReturn = async (req, res) => {
             length: 20,
             width: 10,
             height: 10,
-            items: orderItems.map((i) => ({
+            items: order.items.map((i) => ({
               name: i.prd_name,
               code: i.code,
               quantity: i.prd_qty,
@@ -732,11 +673,10 @@ const vnpayReturn = async (req, res) => {
 
         if (ghnResponse.data.data?.order_code) {
           await orderModel.updateOne(
-            { _id: newOrder._id },
+            { _id: order._id }, // ← Sửa đây
             {
               $set: {
                 ghn_order_code: ghnResponse.data.data.order_code,
-                status_text: "ready_to_pick",
               },
               $push: {
                 status_history: {
@@ -748,16 +688,36 @@ const vnpayReturn = async (req, res) => {
           );
         }
 
+        // Xóa sản phẩm đã mua khỏi giỏ hàng
+        const productsSelected = req.session.productsSelected || [];
         const allItems = req.session.cart || [];
         req.session.cart = allItems.filter(
           (item) => !productsSelected.includes(item._id)
         );
-        delete req.session.pendingOrder;
+        delete req.session.pendingOrderId;
+        delete req.session.productsSelected;
 
         res.redirect("/success");
       } else {
+        await orderModel.updateOne(
+          { _id: order._id }, // ← Sửa đây
+          {
+            $set: {
+              status: 0,
+              status_text: "payment_failed",
+              payment_status: "unpaid",
+            },
+            $push: {
+              status_history: {
+                status: "payment_failed",
+                updatedAt: new Date(),
+              },
+            },
+          }
+        );
+
         res.render("error", {
-          message: "Thanh toán thất bại",
+          message: "Thanh toán thất bại. Đơn hàng đã bị hủy.",
           code: rspCode,
         });
       }
@@ -834,7 +794,10 @@ const login = (req, res) => res.render("site/login", { data: {} });
 
 const postLogin = async (req, res) => {
   const { email, password } = req.body;
+  console.log("email, password", email, password);
   const customer = await customerModel.findOne({ email });
+  console.log("customer", customer);
+
   if (!customer)
     return res.render("site/login", {
       data: { error: "Tài khoản không hợp lệ" },
@@ -1088,9 +1051,13 @@ cron.schedule("*/10 * * * *", async () => {
   }
 });
 
+const createVNPayRetryTxnRef = () => {
+  const datePart = moment().format("YYYYMMDDHHmmss");
+  const randomPart = Math.floor(100000 + Math.random() * 900000);
+  return datePart + randomPart;
+};
 const vnpayIPN = async (req, res) => {
   try {
-    // Lấy dữ liệu từ VNPay
     const vnp_Params = req.query;
 
     const secureHash = vnp_Params.vnp_SecureHash;
@@ -1104,6 +1071,7 @@ const vnpayIPN = async (req, res) => {
     const checkSum = hmac.update(Buffer.from(signData, "utf-8")).digest("hex");
 
     if (secureHash === checkSum) {
+      txnRef;
       await orderModel.updateOne(
         { _id: vnp_Params.vnp_TxnRef },
         { $set: { status: 1, status_text: "paid" } }
@@ -1115,6 +1083,84 @@ const vnpayIPN = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).send("Error");
+  }
+};
+
+const retryVNPayPayment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const order = await orderModel.findById(id);
+
+    if (!order) return res.status(404).send("Không tìm thấy đơn hàng!");
+
+    if (order.payment_method !== "vnpay" || order.payment_status === "paid") {
+      return res.status(400).send("Đơn hàng không thể thanh toán lại!");
+    }
+
+    // ===== DÙNG _id gốc làm TxnRef =====
+    const txnRef = createVNPayRetryTxnRef();
+    order.vnpay_retry_txn_ref = txnRef;
+
+    process.env.TZ = "Asia/Ho_Chi_Minh";
+    const createDate = moment().format("YYYYMMDDHHmmss");
+
+    const ipAddr =
+      req.headers["x-forwarded-for"] ||
+      req.connection.remoteAddress ||
+      req.socket.remoteAddress;
+
+    const tmnCode = process.env.VNP_TMN_CODE;
+    const secretKey = process.env.VNP_HASH_SECRET;
+    const vnpUrl = process.env.VNP_URL;
+    const returnUrl = process.env.VNP_RETURN_URL;
+
+    const amount = order.totalPrice + order.shippingFee;
+
+    let vnp_Params = {
+      vnp_Version: "2.1.0",
+      vnp_Command: "pay",
+      vnp_TmnCode: tmnCode,
+      vnp_Locale: "vn",
+      vnp_CurrCode: "VND",
+      vnp_TxnRef: txnRef,
+      vnp_OrderInfo: "Thanh toan cho ma GD:" + order._id,
+      vnp_OrderType: "other",
+      vnp_Amount: amount * 100,
+      vnp_ReturnUrl: returnUrl,
+      vnp_IpAddr: ipAddr,
+      vnp_CreateDate: createDate,
+    };
+
+    // Sắp xếp params
+    vnp_Params = sortObject(vnp_Params);
+
+    const signData = qs.stringify(vnp_Params, { encode: false });
+    const hmac = crypto.createHmac("sha512", secretKey);
+    const signed = hmac.update(Buffer.from(signData, "utf-8")).digest("hex");
+    vnp_Params["vnp_SecureHash"] = signed;
+
+    const vnpUrl_final =
+      vnpUrl + "?" + qs.stringify(vnp_Params, { encode: false });
+
+    // Cập nhật trạng thái order
+    await orderModel.updateOne(
+      { _id: id },
+      {
+        $set: {
+          payment_status: "pending_payment",
+          status_text: "pending_payment",
+          vnpay_retry_txn_ref: txnRef,
+        },
+        $push: {
+          vnpay_retries: { txn_ref: txnRef },
+        },
+      }
+    );
+
+    res.redirect(vnpUrl_final);
+  } catch (error) {
+    console.error("❌ Lỗi retry thanh toán:", error);
+    res.status(500).send("Lỗi khi xử lý thanh toán!");
   }
 };
 
@@ -1147,7 +1193,6 @@ const vnpayPayment = async (req, res) => {
 
     const orderId = Date.now();
 
-    // ✅ Tạo params
     let vnp_Params = {};
     vnp_Params["vnp_Version"] = "2.1.0";
     vnp_Params["vnp_Command"] = "pay";
@@ -1161,18 +1206,14 @@ const vnpayPayment = async (req, res) => {
     vnp_Params["vnp_ReturnUrl"] = returnUrl;
     vnp_Params["vnp_CreateDate"] = createDate;
 
-    // ✅ Sort và encode
     vnp_Params = sortObject(vnp_Params);
 
-    // ✅ Tạo signData
     let signData = qs.stringify(vnp_Params, { encode: false });
 
-    // ✅ Tạo hash
     let hmac = crypto.createHmac("sha512", secretKey);
     let signed = hmac.update(Buffer.from(signData, "utf-8")).digest("hex");
     vnp_Params["vnp_SecureHash"] = signed;
 
-    // ✅ Tạo URL
     let vnpUrl_final =
       vnpUrl + "?" + qs.stringify(vnp_Params, { encode: false });
 
@@ -1211,4 +1252,5 @@ module.exports = {
   vnpayPayment,
   vnpayReturn,
   calculateShippingAPI,
+  retryVNPayPayment,
 };

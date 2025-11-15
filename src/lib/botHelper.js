@@ -10,15 +10,15 @@ async function getBotReply(message) {
   if (training) return training.answer;
 
   let budget = null;
-  const budgetRegex =
-    /(\d{1,3}(?:[\.,]?\d{3})*)\s*(triệu|tr|m|million|vnđ|vnd)?/i;
+  const budgetRegex = /(\d+(?:[.,]?\d{3})*)\s*(triệu|tr|m|million|vnđ|vnd)?/i;
   const match = message.match(budgetRegex);
   if (match) {
     let num = parseFloat(match[1].replace(/[.,]/g, ""));
     let unit = match[2] ? match[2].toLowerCase() : "";
 
-    if (unit === "triệu" || unit === "tr") num *= 1_000_000;
-    else if (unit === "m" || unit === "million") num *= 1_000_000;
+    if (["triệu", "tr", "m", "million"].includes(unit)) {
+      num *= 1_000_000;
+    }
     budget = num;
   }
 
@@ -32,7 +32,9 @@ async function getBotReply(message) {
     else if (/trên|cao hơn/i.test(message)) query.price = { $gte: budget };
     else query.price = { $lte: budget };
   }
-  if (keywords) query.name = { $regex: keywords, $options: "i" };
+  if (keywords) {
+    query.name = { $regex: keywords, $options: "i" };
+  }
 
   const products = await productModel
     .find(query)
@@ -40,16 +42,14 @@ async function getBotReply(message) {
     .limit(5);
 
   if (products.length === 0 && keywords) {
-    const fallbackProducts = await productModel
-      .find({ is_delete: false, name: { $regex: keywords, $options: "i" } })
-      .limit(5);
-    if (fallbackProducts.length > 0) {
-      let reply =
-        "Mình không tìm thấy sản phẩm theo ngân sách bạn nhập, nhưng có thể bạn quan tâm:\n\n";
-      fallbackProducts.forEach((p) => {
-        reply += `• ${p.name}\n  Giá: ${p.price.toLocaleString()}đ\n  ${
-          p.status || "Còn hàng"
-        }\n\n`;
+    const fallback = await productModel.find({
+      name: { $regex: keywords, $options: "i" },
+    });
+    if (fallback.length > 0) {
+      let reply = `
+Không tìm thấy sản phẩm đúng ngân sách, nhưng có sản phẩm gợi ý:\n\n`;
+      fallback.slice(0, 5).forEach((p) => {
+        reply += `• ${p.name}\n  Giá: ${p.price.toLocaleString()}đ\n\n`;
       });
       return reply;
     }
@@ -57,20 +57,38 @@ async function getBotReply(message) {
 
   if (products.length > 0) {
     let reply = budget
-      ? `Với ngân sách khoảng ${budget.toLocaleString()}đ, mình gợi ý các sản phẩm sau:\n\n`
-      : "Mình tìm thấy những sản phẩm phù hợp:\n\n";
+      ? `Với ngân sách khoảng **${budget.toLocaleString()}đ**, bạn có thể chọn:\n\n`
+      : "Mình tìm thấy sản phẩm phù hợp:\n\n";
 
     products.forEach((p) => {
-      reply += `• ${p.name}\n  Giá: ${p.price.toLocaleString()}đ\n  ${
-        p.status || "Còn hàng"
-      }\n  ${p.promotion ? "Khuyến mãi: " + p.promotion + "\n" : ""}${
-        p.warranty ? "Bảo hành: " + p.warranty + "\n" : ""
-      }${p.accessories ? "Phụ kiện: " + p.accessories + "\n" : ""}\n`;
+      reply +=
+        `📱 *${p.name}*\n` +
+        `💰 Giá: ${p.price.toLocaleString()}đ\n` +
+        `📦 Trạng thái: ${p.is_stock ? "Còn hàng" : "Hết hàng"}\n`;
+
+      if (p.promotion) reply += `🎁 KM: ${p.promotion}\n`;
+      if (p.warranty) reply += `🛡️ BH: ${p.warranty}\n`;
+      if (p.accessories) reply += `🔌 PK: ${p.accessories}\n`;
+      if (p.is_stock) {
+        reply += `
+<form method="post" action="/add-to-cart" style="margin-top:6px;">
+  <input type="hidden" name="id" value="${p._id}">
+  <input type="hidden" name="qty" value="1">
+  <button type="submit"
+    style="padding:6px 10px;background:#007bff;color:#fff;border-radius:4px;border:none;font-size:14px;cursor:pointer;">
+    Thêm vào giỏ
+  </button>
+</form>
+<br/>
+`;
+      } else {
+        reply += `<span style="color:red;font-weight:bold;">Hết hàng – không thể thêm</span><br/><br/>`;
+      }
     });
     return reply;
   }
 
-  return "Xin lỗi, mình chưa hiểu. Bạn có thể hỏi về sản phẩm khác hoặc dịch vụ của shop.";
+  return "Xin lỗi, bot chưa hiểu câu hỏi của bạn. Bạn có thể hỏi lại rõ hơn không?";
 }
 
 module.exports = { getBotReply };
