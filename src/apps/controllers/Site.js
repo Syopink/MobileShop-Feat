@@ -427,8 +427,38 @@ const order = async (req, res) => {
 
     if (paymentMethod === "vnpay") {
       console.log("=== STEP 3: Redirect VNPAY ===");
-      process.env.TZ = "Asia/Ho_Chi_Minh";
-      // ... tạo vnpUrl_final như cũ
+      const tmnCode = process.env.VNP_TMN_CODE;
+      const secretKey = process.env.VNP_HASH_SECRET;
+      const vnpUrl = process.env.VNP_URL;
+      const returnUrl = process.env.VNP_RETURN_URL;
+
+      const createDate = moment().format("YYYYMMDDHHmmss");
+      const txnRef = newOrder._id.toString(); // dùng _id đơn hàng
+
+      let vnp_Params = {
+        vnp_Version: "2.1.0",
+        vnp_Command: "pay",
+        vnp_TmnCode: tmnCode,
+        vnp_Locale: "vn",
+        vnp_CurrCode: "VND",
+        vnp_TxnRef: txnRef,
+        vnp_OrderInfo: "Thanh toán cho mã GD:" + newOrder._id,
+        vnp_OrderType: "other",
+        vnp_Amount: finalTotal * 100,
+        vnp_ReturnUrl: returnUrl,
+        vnp_CreateDate: createDate,
+      };
+
+      vnp_Params = sortObject(vnp_Params);
+
+      const signData = qs.stringify(vnp_Params, { encode: false });
+      const hmac = crypto.createHmac("sha512", secretKey);
+      const signed = hmac.update(Buffer.from(signData, "utf-8")).digest("hex");
+      vnp_Params["vnp_SecureHash"] = signed;
+
+      const vnpUrl_final =
+        vnpUrl + "?" + qs.stringify(vnp_Params, { encode: false });
+
       return res.redirect(vnpUrl_final);
     }
 
