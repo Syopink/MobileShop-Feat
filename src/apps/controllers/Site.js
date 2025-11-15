@@ -623,7 +623,7 @@ const vnpayReturn = async (req, res) => {
               code: i.code,
               quantity: i.prd_qty,
               price: i.prd_price,
-              weight: i.weight,
+              weight: i.weight || 500,
             })),
             client_order_code: `VP${Date.now()}`,
           },
@@ -922,6 +922,10 @@ const calculateShippingFee = async (districtId, wardCode, items) => {
       (sum, item) => sum + (item.weight || 500) * item.qty,
       0
     );
+
+    if (totalWeight <= 0) {
+      throw new Error("Trọng lượng đơn hàng không hợp lệ để tính phí GHN");
+    }
 
     const response = await axios.post(
       "https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/fee",
