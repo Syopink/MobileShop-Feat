@@ -46,6 +46,7 @@ include("layouts/header.ejs") %> <%- include("layouts/menu.ejs") %>
                 name="phone"
                 value="<%= customer.phone %>"
                 disabled
+                oninput="this.value = this.value.replace(/[^0-9]/g, '')"
               />
             </div>
 

@@ -123,6 +123,7 @@ include("layouts/slider.ejs")%>
             class="form-control"
             value="<%= customer.phone %>"
             readonly
+            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
           />
         </div>
         <div class="col-lg-4 col-md-4 col-sm-12 mb-2">
@@ -156,6 +157,7 @@ include("layouts/slider.ejs")%>
             class="form-control"
             placeholder="Nhập số điện thoại"
             required
+  oninput="this.value = this.value.replace(/[^0-9]/g, '')"
           />
         </div>
         <div class="col-lg-4 col-md-4 col-sm-12 mb-2">
